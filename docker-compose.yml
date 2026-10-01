@@ -1,5 +1,53 @@
+# Stack de producción TuHoy (Ghost + MySQL).
+# En el Dell lo gestiona Coolify. MySQL no publica puertos.
+# Secretos: usa .env (ver .env.example). No los commitees.
+
 services:
-  web:
-    build: .
-    ports:
-      - "80"
+  ghost:
+    image: ghost:5
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      url: ${GHOST_URL:-https://tuhoy.com}
+      database__client: mysql
+      database__connection__host: mysql
+      database__connection__user: ${MYSQL_USER}
+      database__connection__password: ${MYSQL_PASSWORD}
+      database__connection__database: ${MYSQL_DATABASE:-ghost}
+    volumes:
+      - ghost-content-data:/var/lib/ghost/content
+    # Detrás de Cloudflare el origen suele llegar por HTTP.
+    # Estas cabeceras evitan el bucle ERR_TOO_MANY_REDIRECTS.
+    labels:
+      - traefik.http.middlewares.tuhoy-https-proto.headers.customrequestheaders.X-Forwarded-Proto=https
+      - traefik.http.middlewares.tuhoy-https-proto.headers.customrequestheaders.X-Forwarded-Ssl=on
+    expose:
+      - "2368"
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-ghost}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ghost-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+
+volumes:
+  ghost-content-data:
+  ghost-mysql-data:
