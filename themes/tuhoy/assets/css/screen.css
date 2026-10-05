@@ -284,6 +284,17 @@ button:focus-visible {
 .th-masthead-inner > .th-wordmark-link,
 .th-masthead-inner > h1 { grid-column: 2; grid-row: 1; }
 .th-mast-search { grid-column: 3; grid-row: 1; justify-self: end; }
+.th-slogan {
+    grid-column: 2;
+    grid-row: 2;
+    margin: 8px 0 0;
+    text-align: center;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(.95rem, 1.6vw, 1.15rem);
+    color: var(--color-text-2);
+}
+.th-header.is-compact .th-slogan { display: none; }
 @media (min-width: 900px) {
     .th-menu-toggle,
     .th-mast-search { display: none; }
@@ -789,6 +800,7 @@ button:focus-visible {
 }
 .th-footer li + li { margin-top: 6px; }
 .th-footer a:hover { color: #f1a0a5; }
+.th-footer-slogan { margin: 8px 0 0; font-family: var(--font-serif); font-style: italic; font-size: 1.1rem; color: #fff; }
 .th-footer-tag { margin: 10px 0 16px; max-width: 32ch; color: #c9c9c4; }
 .th-footer-base {
     display: flex;

@@ -1,9 +1,11 @@
 {{!-- Complementa {{ghost_head}}: locale, robots e indexación. --}}
 <meta property="og:locale" content="es_US">
 <meta name="theme-color" content="#141414">
-{{#if @site.icon}}
-    <link rel="apple-touch-icon" href="{{img_url @site.icon size="s"}}">
-{{/if}}
+{{!-- Van después de ghost_head para que el navegador prefiera el favicon del tema al de Ajustes. --}}
+<link rel="icon" href="{{asset "images/favicon-32.png"}}" sizes="32x32" type="image/png">
+<link rel="icon" href="{{asset "images/favicon-192.png"}}" sizes="192x192" type="image/png">
+<link rel="icon" href="{{asset "images/favicon.svg"}}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{asset "images/apple-touch-icon.png"}}">
 {{#is "error"}}
     <meta name="robots" content="noindex, follow">
 {{else}}

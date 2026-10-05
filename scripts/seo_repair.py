@@ -106,7 +106,12 @@ def plan_post(post: dict) -> dict:
     body = clean_body(post.get("html") or "", title)
     lead = lead_text(body)
     excerpt = ORIGINAL_DEKS.get(title) or (post.get("custom_excerpt") or "").strip()
-    if not excerpt or is_truncated(excerpt, lead) or daily.looks_like_nav(excerpt):
+    if (
+        not excerpt
+        or excerpt.startswith("Edición de demostración")
+        or is_truncated(excerpt, lead)
+        or daily.looks_like_nav(excerpt)
+    ):
         excerpt = daily.smart_cut(daily.first_sentence(lead), 300) or excerpt
     if 70 <= len(excerpt) <= 160:
         meta_desc = excerpt
