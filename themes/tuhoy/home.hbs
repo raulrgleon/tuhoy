@@ -1,0 +1,155 @@
+{{!< default}}
+
+{{#get "posts" limit="8" include="tags" order="published_at desc"}}
+<section class="th-breaking" id="ultima-hora" aria-label="Última hora">
+    <div class="th-wrap th-breaking-inner">
+        <p class="th-breaking-label">Última hora</p>
+        <ul class="th-breaking-list">
+            {{#foreach posts}}
+            <li>
+                <time datetime="{{date format="YYYY-MM-DDTHH:mmZ"}}">{{date format="HH:mm"}}</time>
+                <a href="{{url}}">{{title}}</a>
+            </li>
+            {{/foreach}}
+        </ul>
+    </div>
+</section>
+{{/get}}
+
+<div class="th-wrap">
+    {{#get "posts" filter="featured:true" limit="4" include="tags,authors"}}
+    <section class="th-lead-grid" aria-label="Apertura">
+        {{#foreach posts limit="1"}}
+            {{> "story-lead"}}
+        {{/foreach}}
+        <div class="th-lead-rail">
+            {{#foreach posts from="2" to="4"}}
+                {{> "story-side"}}
+            {{/foreach}}
+        </div>
+    </section>
+    {{/get}}
+
+    {{#get "posts" filter="tag:politica+tag:-inmigracion+featured:false" limit="5" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-pattern-lead-side">
+        {{> "section-head" name="Política" url="/tag/politica/"}}
+        <div class="th-split">
+            <div>
+                {{#foreach posts limit="1"}}
+                    {{> "story-lead"}}
+                {{/foreach}}
+            </div>
+            <div class="th-stack">
+                {{#foreach posts from="2" to="5"}}
+                    {{> "story-text"}}
+                {{/foreach}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+
+    {{#get "posts" filter="tag:mundo+tag:-politica+tag:-economia+featured:false" limit="3" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-pattern-columns">
+        {{> "section-head" name="Mundo" url="/tag/mundo/"}}
+        <div class="th-cols-3">
+            {{#foreach posts}}
+                {{> "story-col"}}
+            {{/foreach}}
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+
+    {{#get "posts" filter="tag:inmigracion+featured:false" limit="5" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-pattern-feature-list" id="inmigracion">
+        {{> "section-head" name="Inmigración y Latinos" url="/tag/inmigracion/"}}
+        <div class="th-split">
+            <div>
+                {{#foreach posts limit="1"}}
+                    {{> "story-lead"}}
+                {{/foreach}}
+            </div>
+            <div class="th-stack">
+                {{#foreach posts from="2" to="5"}}
+                    {{> "story-text" show_excerpt=true}}
+                {{/foreach}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+
+    {{#get "posts" filter="tag:economia+featured:false" limit="5" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-pattern-feature-list">
+        {{> "section-head" name="Economía" url="/tag/economia/"}}
+        <div class="th-split th-split-reverse">
+            <div class="th-stack">
+                {{#foreach posts from="2" to="5"}}
+                    {{> "story-text" show_excerpt=true}}
+                {{/foreach}}
+            </div>
+            <div>
+                {{#foreach posts limit="1"}}
+                    {{> "story-col"}}
+                {{/foreach}}
+            </div>
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+
+    {{#get "posts" filter="tag:tangle+featured:false" limit="3" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-pattern-opinion">
+        {{> "section-head" name="Análisis"}}
+        <div class="th-cols-3">
+            {{#foreach posts}}
+                {{> "story-opinion"}}
+            {{/foreach}}
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+
+    {{#get "posts" filter="tag:tecnologia" limit="4" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-pattern-compact">
+        {{> "section-head" name="Tecnología" url="/tag/tecnologia/"}}
+        <div class="th-compact">
+            {{#foreach posts}}
+                {{> "story-text" show_excerpt=true}}
+            {{/foreach}}
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+
+    {{#get "posts" filter="tag:salud" limit="2" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-pattern-feature-list">
+        {{> "section-head" name="Salud" url="/tag/salud/"}}
+        <div class="th-cols-2">
+            {{#foreach posts}}
+                {{> "story-col"}}
+            {{/foreach}}
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+
+    <section class="th-newsletter" aria-label="Boletín">
+        <div class="th-newsletter-inner">
+            <p class="th-kicker">Boletín</p>
+            <h2>La edición en el correo</h2>
+            <p>Un recorte del día, en español, cuando haya algo que merezca la pena.</p>
+            {{#if @site.members_enabled}}
+                <a class="th-btn" href="#/portal/signup" data-portal="signup">Suscribirse</a>
+            {{/if}}
+        </div>
+    </section>
+</div>

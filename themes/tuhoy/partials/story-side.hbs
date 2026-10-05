@@ -1,0 +1,10 @@
+<article class="th-side">
+    {{#if feature_image}}
+        {{> "story-media" ratio="standard" sizes="(max-width: 720px) 100vw, 160px"}}
+    {{/if}}
+    <div class="th-side-body">
+        {{> "story-kicker"}}
+        <h3 class="th-hed-m"><a href="{{url}}">{{title}}</a></h3>
+        {{> "story-meta"}}
+    </div>
+</article>

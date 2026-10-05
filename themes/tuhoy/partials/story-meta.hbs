@@ -1,0 +1,7 @@
+<p class="th-meta">
+    {{#if primary_author}}
+        <a href="{{primary_author.url}}">{{primary_author.name}}</a>
+        <span aria-hidden="true"> · </span>
+    {{/if}}
+    <time datetime="{{date format="YYYY-MM-DDTHH:mmZ"}}">{{date format="D MMM YYYY" locale="es"}}</time>
+</p>

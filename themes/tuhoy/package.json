@@ -1,0 +1,46 @@
+{
+    "name": "tuhoy",
+    "description": "Tema editorial de TuHoy",
+    "version": "1.3.0",
+    "private": true,
+    "engines": {
+        "ghost": ">=5.0.0"
+    },
+    "license": "MIT",
+    "author": {
+        "name": "TuHoy",
+        "email": "raulrgleon@gmail.com"
+    },
+    "keywords": [
+        "ghost-theme",
+        "ghost",
+        "theme"
+    ],
+    "config": {
+        "posts_per_page": 18,
+        "image_sizes": {
+            "xs": {
+                "width": 160
+            },
+            "s": {
+                "width": 320
+            },
+            "m": {
+                "width": 720
+            },
+            "l": {
+                "width": 960
+            },
+            "xl": {
+                "width": 1400
+            }
+        },
+        "card_assets": true,
+        "custom": {
+            "edition_label": {
+                "type": "text",
+                "default": "Edición digital"
+            }
+        }
+    }
+}

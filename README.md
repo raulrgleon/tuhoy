@@ -37,9 +37,15 @@ SMTP no está configurado. El sitio funciona; newsletters e emails de Ghost no. 
 
 En Coolify: TuHoy Ghost → Backups.
 
+## Edición diaria
+
+Cada día a las 06:00 (hora de Nueva York) corre `scripts/daily_edition.py`: lee RSS reales (BBC Mundo, France 24 y Google News de inmigración/latinos), escribe piezas originales en español y las publica en Ghost. No inventa titulares. El cron lo instala `scripts/install_daily_cron.sh`. Log: `logs/daily.log`.
+
 ## Tema
 
-El diseño de periódico (portada, secciones, destacados) se instala después, desde Ghost → Settings → Design, o subiendo un tema a `content/themes`.
+Los temas oficiales se instalan desde Ghost → Settings → Site → Theme → Change theme → Install.
+
+Ghost 5 baja el ZIP de GitHub con permisos 000, carpetas `.github/` y helpers de Ghost 6 (`social_accounts`). En Docker eso rompe el Install. El compose carga `ghost-hooks/sanitize-github-theme.js` para dejar el ZIP usable en Ghost 5.130. No borres ese archivo. Reinicia TuHoy Ghost en Coolify tras cambiar el hook.
 
 ## Sitio estático anterior
 

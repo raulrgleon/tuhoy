@@ -1,0 +1,10 @@
+<article class="th-opinion">
+    <p class="th-kicker">Análisis</p>
+    <h3 class="th-hed-m"><a href="{{url}}">{{title}}</a></h3>
+    {{#if custom_excerpt}}
+        <p class="th-sum">{{custom_excerpt}}</p>
+    {{else}}
+        <p class="th-sum">{{excerpt words="28"}}</p>
+    {{/if}}
+    <p class="th-opinion-by">{{#if primary_author}}{{primary_author.name}}{{/if}}</p>
+</article>

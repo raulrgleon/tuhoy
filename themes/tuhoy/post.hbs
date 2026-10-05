@@ -1,0 +1,85 @@
+{{!< default}}
+
+<article class="th-article">
+    {{#post}}
+    <div class="th-wrap">
+        {{#if primary_tag}}
+            {{> "breadcrumbs" section=primary_tag.name section_url=primary_tag.url current=title}}
+        {{else}}
+            {{> "breadcrumbs" current=title}}
+        {{/if}}
+    </div>
+    <header class="th-article-head">
+        <div class="th-article-head-inner">
+            {{> "story-kicker"}}
+            <h1 class="th-hed-article">{{title}}</h1>
+            {{#if custom_excerpt}}
+                <p class="th-dek th-dek-article">{{custom_excerpt}}</p>
+            {{/if}}
+            <div class="th-article-byline">
+                {{#foreach authors}}
+                    <a class="th-author-name" href="{{url}}">{{name}}</a>{{#unless @last}}, {{/unless}}
+                {{/foreach}}
+                <time datetime="{{date format="YYYY-MM-DDTHH:mmZ"}}">{{date format="D MMM YYYY, HH:mm"}}</time>
+                <span>{{reading_time minute="1 min de lectura" minutes="% min de lectura"}}</span>
+            </div>
+            <div class="th-share" aria-label="Compartir esta noticia">
+                <button class="th-share-button" type="button" data-share-native data-share-title="{{title}}" aria-label="Compartir noticia">
+                    <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M10 13.5V3m0 0L6.5 6.5M10 3l3.5 3.5M4 10.5V16h12v-5.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    Compartir
+                </button>
+                <button class="th-share-button" type="button" data-copy-link aria-label="Copiar enlace de la noticia">
+                    <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M7.5 12.5 12.5 7.5M6.2 14.8l-1 1a2.8 2.8 0 0 1-4-4l3-3a2.8 2.8 0 0 1 4 0M13.8 5.2l1-1a2.8 2.8 0 1 1 4 4l-3 3a2.8 2.8 0 0 1-4 0" transform="translate(-.5 0)" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                    Copiar enlace
+                </button>
+                <span class="th-share-status" data-share-status aria-live="polite"></span>
+            </div>
+        </div>
+    </header>
+
+    {{#if feature_image}}
+    <figure class="th-article-figure">
+        <img
+            src="{{img_url feature_image size="xl"}}"
+            srcset="{{img_url feature_image size="m"}} 720w, {{img_url feature_image size="l"}} 960w, {{img_url feature_image size="xl"}} 1400w"
+            sizes="(max-width: 1100px) 100vw, 1100px"
+            alt="{{#if feature_image_alt}}{{feature_image_alt}}{{else}}{{title}}{{/if}}"
+            fetchpriority="high"
+            decoding="async"
+        >
+        {{#if feature_image_caption}}
+            <figcaption>{{feature_image_caption}}</figcaption>
+        {{/if}}
+    </figure>
+    {{/if}}
+
+    <div class="th-article-layout">
+        <div class="th-article-body" data-article-body>
+            {{content}}
+        </div>
+        <aside class="th-rail" aria-label="Más noticias">
+            <p class="th-section-name">Últimas</p>
+            {{#get "posts" limit="5" include="tags" filter="id:-{{id}}"}}
+                {{#foreach posts}}
+                    {{> "story-text"}}
+                {{/foreach}}
+            {{/get}}
+        </aside>
+    </div>
+
+    {{#if primary_tag}}
+    {{#get "posts" limit="4" include="tags,authors" filter="tag:{{primary_tag.slug}}+id:-{{id}}"}}
+    {{#if posts}}
+    <section class="th-related">
+        {{> "section-head" name="Más noticias"}}
+        <div class="th-cols-4">
+            {{#foreach posts}}
+                {{> "story-col"}}
+            {{/foreach}}
+        </div>
+    </section>
+    {{/if}}
+    {{/get}}
+    {{/if}}
+    {{/post}}
+</article>

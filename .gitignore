@@ -6,3 +6,10 @@ node_modules/
 .env
 *.pem
 *.key
+logs/
+data/edition_state.json
+/tmp/
+__pycache__/
+*.pyc
+data/routes-backup-*.yaml
+headline.zip

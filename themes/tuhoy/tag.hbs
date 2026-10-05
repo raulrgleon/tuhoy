@@ -1,0 +1,38 @@
+{{!< default}}
+
+<div class="th-wrap th-page">
+    {{#tag}}
+    {{> "breadcrumbs" section="Secciones" current=name}}
+    <header class="th-page-head">
+        <p class="th-kicker">Sección</p>
+        <h1 class="th-hed-l">{{name}}</h1>
+        {{#if description}}
+            <p class="th-dek">{{description}}</p>
+        {{/if}}
+    </header>
+    {{/tag}}
+
+    <section class="th-lead-grid th-lead-grid-section" aria-label="Apertura de sección">
+        {{#foreach posts limit="1"}}
+            {{> "story-lead"}}
+        {{/foreach}}
+        <div class="th-lead-rail">
+            {{#foreach posts from="2" to="4"}}
+                {{> "story-side"}}
+            {{/foreach}}
+        </div>
+    </section>
+
+    {{#match posts.length ">" 4}}
+    <section class="th-section">
+        {{> "section-head" name="Más en esta sección"}}
+        <div class="th-feed">
+            {{#foreach posts from="5"}}
+                {{> "story-col"}}
+            {{/foreach}}
+        </div>
+    </section>
+    {{/match}}
+
+    {{pagination}}
+</div>

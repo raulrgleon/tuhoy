@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="{{@site.locale}}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{#is "paged"}}
+        {{#is "tag"}}<title>{{tag.name}} — página {{pagination.page}} | {{@site.title}}</title>
+        {{else}}{{#is "author"}}<title>{{author.name}} — página {{pagination.page}} | {{@site.title}}</title>
+        {{else}}<title>Últimas noticias — página {{pagination.page}} | {{@site.title}}</title>{{/is}}{{/is}}
+    {{else}}
+        <title>{{meta_title}}</title>
+    {{/is}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,650;0,6..72,700;1,6..72,400;1,6..72,500&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+    <link rel="stylesheet" href="{{asset "css/screen.css"}}">
+    {{ghost_head}}
+    {{> "seo-head"}}
+    {{> "seo-schema"}}
+</head>
+<body class="{{body_class}}">
+    <a class="th-skip" href="#contenido">Saltar al contenido</a>
+    {{> header}}
+    <main id="contenido" class="th-main">
+        {{{body}}}
+    </main>
+    {{> footer}}
+    <script src="{{asset "js/main.js"}}" defer></script>
+    {{ghost_foot}}
+</body>
+</html>

@@ -1,0 +1,8 @@
+{{!< default}}
+
+<div class="th-wrap th-page th-error">
+    <p class="th-kicker">{{statusCode}}</p>
+    <h1 class="th-hed-l">{{#match statusCode 404}}Página no encontrada{{else}}{{message}}{{/match}}</h1>
+    <p class="th-dek">Esa página no está en esta edición.</p>
+    <p><a class="th-btn" href="{{@site.url}}">Ir a portada</a></p>
+</div>

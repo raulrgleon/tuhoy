@@ -1,0 +1,92 @@
+<header class="th-header" data-header>
+    <div class="th-utility">
+        <div class="th-wrap th-utility-inner">
+            <p class="th-utility-date" data-today-date>TuHoy</p>
+            <p class="th-utility-edition">{{#if @custom.edition_label}}{{@custom.edition_label}}{{else}}Edición digital{{/if}}</p>
+            <div class="th-utility-actions">
+                {{#if @site.members_enabled}}
+                    {{#unless @member}}
+                        <a class="th-link-quiet" href="#/portal/signin" data-portal="signin">Entrar</a>
+                        <a class="th-link-accent" href="#/portal/signup" data-portal="signup">Suscribirse</a>
+                    {{else}}
+                        <a class="th-link-quiet" href="#/portal/account" data-portal="account">Cuenta</a>
+                    {{/unless}}
+                {{/if}}
+                <button class="th-icon-btn" type="button" data-ghost-search aria-label="Buscar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="th-masthead">
+        <div class="th-wrap th-masthead-inner">
+            <button class="th-icon-btn th-menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="th-drawer">
+                <span class="th-menu-toggle-bars" aria-hidden="true"></span>
+                <span class="u-sr">Menú</span>
+            </button>
+            {{#is "home"}}<h1 class="th-wordmark">{{/is}}
+            <a class="th-wordmark-link" href="{{@site.url}}" {{^is "home"}}aria-label="TuHoy, ir a portada"{{/is}}>TuHoy</a>
+            {{#is "home"}}</h1>{{/is}}
+            <button class="th-icon-btn th-mast-search" type="button" data-ghost-search aria-label="Buscar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <nav class="th-nav" aria-label="Secciones">
+        <div class="th-wrap">
+            <ul class="nav">
+                <li class="nav-inicio{{#is "home"}} nav-current{{/is}}"><a href="{{@site.url}}">Inicio</a></li>
+                <li class="nav-mundo{{#match tag.slug "=" "mundo"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "mundo"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/mundo/">Mundo</a></li>
+                <li class="nav-inmigracion{{#match tag.slug "=" "inmigracion"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "inmigracion"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/inmigracion/">Inmigración</a></li>
+                <li class="nav-politica{{#match tag.slug "=" "politica"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "politica"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/politica/">Política</a></li>
+                <li class="nav-economia{{#match tag.slug "=" "economia"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "economia"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/economia/">Economía</a></li>
+                <li class="nav-tecnologia{{#match tag.slug "=" "tecnologia"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "tecnologia"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/tecnologia/">Tecnología</a></li>
+                <li class="nav-salud{{#match tag.slug "=" "salud"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "salud"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/salud/">Salud</a></li>
+                <li class="nav-about{{#is "page"}}{{#match slug "=" "about"}} nav-current{{/match}}{{/is}}"><a href="{{@site.url}}/about/">Quiénes somos</a></li>
+            </ul>
+        </div>
+    </nav>
+</header>
+
+<div class="th-drawer" id="th-drawer" data-drawer hidden>
+    <div class="th-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="th-drawer-title" data-drawer-panel>
+        <div class="th-drawer-top">
+            <p class="th-wordmark th-wordmark-sm" id="th-drawer-title">TuHoy</p>
+            <button class="th-icon-btn" type="button" data-menu-close aria-label="Cerrar menú">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+        </div>
+        <div class="th-drawer-groups">
+            <section>
+                <h2>Noticias</h2>
+                <ul>
+                    <li><a href="{{@site.url}}">Inicio</a></li>
+                    <li><a href="{{@site.url}}/#ultima-hora">Última hora</a></li>
+                    <li><a href="{{@site.url}}/tag/mundo/">Mundo</a></li>
+                    <li><a href="{{@site.url}}/tag/inmigracion/">Inmigración</a></li>
+                    <li><a href="{{@site.url}}/tag/politica/">Política</a></li>
+                    <li><a href="{{@site.url}}/tag/economia/">Economía</a></li>
+                </ul>
+            </section>
+            <section>
+                <h2>Temas</h2>
+                <ul>
+                    <li><a href="{{@site.url}}/tag/tecnologia/">Tecnología</a></li>
+                    <li><a href="{{@site.url}}/tag/salud/">Salud</a></li>
+                    <li><a href="{{@site.url}}/tag/latinos/">Latinos</a></li>
+                </ul>
+            </section>
+            <section>
+                <h2>El diario</h2>
+                <ul>
+                    <li><a href="{{@site.url}}/about/">Quiénes somos</a></li>
+                    {{#if @site.members_enabled}}
+                    <li><a href="#/portal/signup" data-portal="signup">Suscribirse</a></li>
+                    {{/if}}
+                </ul>
+            </section>
+        </div>
+    </div>
+</div>

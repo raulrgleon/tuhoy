@@ -1,0 +1,31 @@
+{{!-- {{ghost_head}} ya emite Article, WebSite y Person; aquí solo se añaden migas de pan. --}}
+{{#is "post"}}
+{{#post}}
+{{#if primary_tag}}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Inicio", "item": "{{@site.url}}/"},
+        {"@type": "ListItem", "position": 2, "name": "{{primary_tag.name}}", "item": "{{@site.url}}/tag/{{primary_tag.slug}}/"}
+    ]
+}
+</script>
+{{/if}}
+{{/post}}
+{{/is}}
+{{#is "tag"}}
+{{#tag}}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Inicio", "item": "{{@site.url}}/"},
+        {"@type": "ListItem", "position": 2, "name": "{{name}}", "item": "{{@site.url}}/tag/{{slug}}/"}
+    ]
+}
+</script>
+{{/tag}}
+{{/is}}

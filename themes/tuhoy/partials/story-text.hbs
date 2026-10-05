@@ -1,0 +1,8 @@
+<article class="th-text">
+    {{> "story-kicker"}}
+    <h3 class="th-hed-s"><a href="{{url}}">{{title}}</a></h3>
+    {{#if show_excerpt}}
+        <p class="th-sum">{{excerpt words="22"}}</p>
+    {{/if}}
+    {{> "story-meta"}}
+</article>

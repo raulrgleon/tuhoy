@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img" aria-label="TuHoy">
+  <title>TuHoy</title>
+  <rect width="720" height="200" fill="#ffffff"/>
+  <line x1="40" y1="36" x2="680" y2="36" stroke="#111111" stroke-width="3"/>
+  <line x1="40" y1="42" x2="680" y2="42" stroke="#111111" stroke-width="1"/>
+  <text x="360" y="128" text-anchor="middle" fill="#111111"
+        font-family="Arial Black, Helvetica Neue, Franklin Gothic Medium, sans-serif"
+        font-size="92" font-weight="900" letter-spacing="-2">TuHoy</text>
+  <line x1="40" y1="158" x2="680" y2="158" stroke="#111111" stroke-width="1"/>
+  <line x1="40" y1="164" x2="680" y2="164" stroke="#111111" stroke-width="3"/>
+</svg>

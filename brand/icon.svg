@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="TuHoy">
+  <title>TuHoy</title>
+  <rect width="256" height="256" fill="#ffffff"/>
+  <rect x="28" y="58" width="200" height="140" fill="none" stroke="#111111" stroke-width="12"/>
+  <rect x="40" y="70" width="176" height="116" fill="none" stroke="#111111" stroke-width="2.5"/>
+  <!-- T -->
+  <rect x="58" y="92" width="78" height="16" fill="#111111"/>
+  <rect x="89" y="92" width="16" height="72" fill="#111111"/>
+  <!-- H -->
+  <rect x="148" y="92" width="16" height="72" fill="#111111"/>
+  <rect x="186" y="92" width="16" height="72" fill="#111111"/>
+  <rect x="148" y="120" width="54" height="16" fill="#111111"/>
+</svg>

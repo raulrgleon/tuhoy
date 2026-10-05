@@ -1,0 +1,16 @@
+{{!< default}}
+
+<div class="th-wrap th-page">
+    {{> "breadcrumbs" current="Últimas noticias"}}
+    <header class="th-page-head">
+        <p class="th-kicker">Archivo</p>
+        <h1 class="th-hed-l">Últimas noticias</h1>
+        <p class="th-dek">El recorte cronológico de TuHoy, en español.</p>
+    </header>
+    <div class="th-feed">
+        {{#foreach posts}}
+            {{> "story-col"}}
+        {{/foreach}}
+    </div>
+    {{pagination}}
+</div>

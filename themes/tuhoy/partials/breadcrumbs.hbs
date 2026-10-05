@@ -1,0 +1,13 @@
+<nav class="th-crumbs" aria-label="Miga de pan">
+    <ol>
+        <li><a href="{{@site.url}}/">Inicio</a></li>
+        {{#if section_url}}
+            <li><a href="{{section_url}}">{{section}}</a></li>
+        {{else if section}}
+            <li>{{section}}</li>
+        {{/if}}
+        {{#if current}}
+            <li aria-current="page">{{current}}</li>
+        {{/if}}
+    </ol>
+</nav>

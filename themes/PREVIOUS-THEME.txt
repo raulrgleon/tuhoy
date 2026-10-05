@@ -1,0 +1,1 @@
+edition (Ghost default magazine) was active before TuHoy custom theme 1.0.0

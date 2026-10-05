@@ -1,0 +1,13 @@
+<article class="th-lead">
+    {{> "story-media" eager=true ratio="wide" sizes="(max-width: 900px) 100vw, 62vw"}}
+    <div class="th-lead-body">
+        {{> "story-kicker"}}
+        <h2 class="th-hed-xl"><a href="{{url}}">{{title}}</a></h2>
+        {{#if custom_excerpt}}
+            <p class="th-dek">{{custom_excerpt}}</p>
+        {{else}}
+            <p class="th-dek">{{excerpt words="32"}}</p>
+        {{/if}}
+        {{> "story-meta"}}
+    </div>
+</article>

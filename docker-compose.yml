@@ -11,14 +11,22 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
+      NODE_OPTIONS: --require /tuhoy/sanitize-github-theme.js
+      TMPDIR: /var/lib/ghost/content/.tmp
       url: ${GHOST_URL:-https://tuhoy.com}
       database__client: mysql
       database__connection__host: mysql
       database__connection__user: ${MYSQL_USER}
       database__connection__password: ${MYSQL_PASSWORD}
       database__connection__database: ${MYSQL_DATABASE:-ghost}
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    tmpfs:
+      - /tmp
     volumes:
       - ghost-content-data:/var/lib/ghost/content
+      - ./ghost-hooks/sanitize-github-theme.js:/tuhoy/sanitize-github-theme.js:ro
     # Detrás de Cloudflare el origen suele llegar por HTTP.
     # Estas cabeceras evitan el bucle ERR_TOO_MANY_REDIRECTS.
     labels:

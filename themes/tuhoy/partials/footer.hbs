@@ -1,0 +1,50 @@
+<footer class="th-footer">
+    <div class="th-wrap">
+        <div class="th-footer-grid">
+            <div class="th-footer-brand">
+                <p class="th-wordmark th-wordmark-sm">TuHoy</p>
+                <p class="th-footer-tag">Periódico digital en español. Qué pasó, por qué importa y de dónde sale.</p>
+                {{#if @site.members_enabled}}
+                    <a class="th-btn" href="#/portal/signup" data-portal="signup">Recibir la edición</a>
+                {{/if}}
+            </div>
+            <div>
+                <h2>Secciones</h2>
+                <ul>
+                    <li><a href="{{@site.url}}">Inicio</a></li>
+                    <li><a href="{{@site.url}}/tag/mundo/">Mundo</a></li>
+                    <li><a href="{{@site.url}}/tag/inmigracion/">Inmigración</a></li>
+                    <li><a href="{{@site.url}}/tag/latinos/">Latinos</a></li>
+                    <li><a href="{{@site.url}}/tag/politica/">Política</a></li>
+                    <li><a href="{{@site.url}}/tag/economia/">Economía</a></li>
+                    <li><a href="{{@site.url}}/tag/tecnologia/">Tecnología</a></li>
+                    <li><a href="{{@site.url}}/tag/salud/">Salud</a></li>
+                </ul>
+            </div>
+            <div>
+                <h2>El diario</h2>
+                <ul>
+                    <li><a href="{{@site.url}}/about/">Quiénes somos</a></li>
+                    <li><a href="{{@site.url}}/page/2/">Últimas noticias</a></li>
+                    <li><a href="{{@site.url}}/author/raul/">Redacción</a></li>
+                    <li><a href="{{@site.url}}/rss/">RSS</a></li>
+                    {{#if @site.members_enabled}}
+                    <li><a href="#/portal/signin" data-portal="signin">Entrar</a></li>
+                    {{/if}}
+                </ul>
+            </div>
+            <div>
+                <h2>Lectura</h2>
+                <ul>
+                    <li><a href="{{@site.url}}/tag/tangle/">Tangle</a></li>
+                    <li><a href="{{@site.url}}/tag/associated-press/">Associated Press</a></li>
+                    <li><a href="{{@site.url}}/tag/ground-news/">Ground News</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="th-footer-base">
+            <p>© {{date format="YYYY"}} TuHoy. Todos los derechos reservados.</p>
+            <p>{{@site.title}} · {{@site.url}}</p>
+        </div>
+    </div>
+</footer>

@@ -1,0 +1,33 @@
+{{!-- Complementa {{ghost_head}}: locale, robots e indexación. --}}
+<meta property="og:locale" content="es_US">
+<meta name="theme-color" content="#141414">
+{{#if @site.icon}}
+    <link rel="apple-touch-icon" href="{{img_url @site.icon size="s"}}">
+{{/if}}
+{{#is "error"}}
+    <meta name="robots" content="noindex, follow">
+{{else}}
+    {{#is "post"}}
+        {{#post}}
+            {{#has tag="#resumen-automatico"}}
+                <meta name="robots" content="noindex, follow">
+            {{else}}
+                <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+            {{/has}}
+        {{/post}}
+    {{else}}
+        {{#is "tag"}}
+            {{#match tag.slug "=" "tangle"}}
+                <meta name="robots" content="noindex, follow">
+            {{else match tag.slug "=" "associated-press"}}
+                <meta name="robots" content="noindex, follow">
+            {{else match tag.slug "=" "ground-news"}}
+                <meta name="robots" content="noindex, follow">
+            {{else}}
+                <meta name="robots" content="index, follow, max-image-preview:large">
+            {{/match}}
+        {{else}}
+            <meta name="robots" content="index, follow, max-image-preview:large">
+        {{/is}}
+    {{/is}}
+{{/is}}

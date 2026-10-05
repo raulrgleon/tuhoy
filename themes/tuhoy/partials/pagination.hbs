@@ -1,0 +1,15 @@
+{{#if pagination}}
+<nav class="th-pagination" aria-label="Paginación">
+    {{#if prev}}
+        <a href="{{page_url prev}}">← Anterior</a>
+    {{else}}
+        <span class="is-disabled" aria-disabled="true">← Anterior</span>
+    {{/if}}
+    <p>Página {{page}} de {{pages}}</p>
+    {{#if next}}
+        <a href="{{page_url next}}">Siguiente →</a>
+    {{else}}
+        <span class="is-disabled" aria-disabled="true">Siguiente →</span>
+    {{/if}}
+</nav>
+{{/if}}
