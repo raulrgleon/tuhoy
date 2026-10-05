@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {{#is "paged"}}
         {{#is "tag"}}<title>{{tag.name}} — página {{pagination.page}} | {{@site.title}}</title>
-        {{else}}{{#is "author"}}<title>{{author.name}} — página {{pagination.page}} | {{@site.title}}</title>
+        {{else}}{{#is "author"}}<title>{{{block "author_name"}}} — página {{pagination.page}} | {{@site.title}}</title>
         {{else}}<title>Últimas noticias — página {{pagination.page}} | {{@site.title}}</title>{{/is}}{{/is}}
     {{else}}{{#is "home"}}
         <title>{{@site.title}} — Las noticias de hoy, en tu idioma</title>

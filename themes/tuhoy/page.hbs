@@ -5,6 +5,7 @@
     <div class="th-wrap">
         {{> "breadcrumbs" current=title}}
     </div>
+    {{#match @page.show_title_and_feature_image}}
     <header class="th-article-head">
         <div class="th-article-head-inner">
             <p class="th-kicker">El diario</p>
@@ -28,6 +29,7 @@
         {{#if feature_image_caption}}<figcaption>{{feature_image_caption}}</figcaption>{{/if}}
     </figure>
     {{/if}}
+    {{/match}}
     <div class="th-article-layout th-page-layout">
         <div class="th-article-body">
             {{content}}
