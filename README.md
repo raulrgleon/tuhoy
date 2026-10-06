@@ -130,7 +130,7 @@ python3 scripts/x_posts.py             # elige, escribe y envía (o encola)
 
 Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 
-**Perfil de @TuHoy_:** nombre "TuHoy", foto [`brand/x-avatar.jpg`](brand/x-avatar.jpg) (icono TH), portada [`brand/x-banner.jpg`](brand/x-banner.jpg) (1500×500), bio "Noticias en español, claras y verificadas: inmigración, latinos en EE. UU., política y el mundo. Todos los días. 📰", ubicación Estados Unidos y web https://tuhoy.com.
+**Perfil de @TuHoy_:** nombre "TuHoy", foto [`brand/x-avatar.jpg`](brand/x-avatar.jpg) (icono TH), portada [`brand/x-banner.jpg`](brand/x-banner.jpg) (1500×500), bio "Noticias en español, claras y verificadas: inmigración, latinos en EE. UU., política y el mundo. Todos los días. 📰", ubicación Estados Unidos y web https://tuhoy.com. Es cuenta profesional (tipo Business, categoría "Media & News Company").
 
 ## Scripts
 
