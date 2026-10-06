@@ -207,7 +207,11 @@ def post_due(env: dict) -> None:
     queue = json.loads(QUEUE.read_text(encoding="utf-8"))
     now = datetime.now(TZ)
     for i, t in enumerate(queue.get("pendientes", [])):
-        if t.get("tweet_id") or datetime.fromisoformat(t["hora"]) > now:
+        if t.get("tweet_id") or t.get("vencido") or datetime.fromisoformat(t["hora"]) > now:
+            continue
+        if now - datetime.fromisoformat(t["hora"]) > timedelta(hours=2):
+            t["vencido"] = True
+            log(f"vencido, no se publica: {t['titulo']}")
             continue
         try:
             t["tweet_id"] = post_tweet(env, full_text(t, links_for(env, i)))

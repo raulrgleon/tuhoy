@@ -119,7 +119,9 @@ python3 scripts/eval_writer.py           # compara y escribe data/eval_report.md
 
 La API de X es de pago por uso desde 2026 (unos $0.015 por post sin enlace y $0.20 con enlace). Para activar el modo `api`: comprar créditos en [console.x.com](https://console.x.com) con la cuenta @tuhoy_, crear una app con permisos de lectura y escritura, poner las cuatro claves `X_*` en `.env` y cambiar `X_MODE=api`. `X_LINKS` decide cuántos posts llevan enlace (los más importantes primero).
 
-**Estrategia actual (presupuesto $20/mes):** 14 posts al día, los 2 más importantes con enlace (`X_POSTS=14`, `X_LINKS=2`): unos $0.58 al día, ~$17.40 al mes.
+**Estado actual:** `X_MODE=api`, publicando solo en @TuHoy_ con la app `TuHoy_` (id 33505696) de console.x.com. Si un post lleva más de 2 horas de retraso (por ejemplo, el servidor estuvo apagado) se marca como vencido y no se publica, para no soltar varios de golpe.
+
+**Estrategia (presupuesto $20/mes):** 14 posts al día, los 2 más importantes con enlace (`X_POSTS=14`, `X_LINKS=2`): unos $0.58 al día, ~$17.40 al mes.
 
 ```bash
 python3 scripts/x_posts.py --dry-run   # muestra los 7 posts sin enviarlos
