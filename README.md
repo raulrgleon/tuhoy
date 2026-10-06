@@ -130,6 +130,8 @@ python3 scripts/x_posts.py             # elige, escribe y envía (o encola)
 
 Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 
+**Perfil de @TuHoy_:** nombre "TuHoy", foto [`brand/x-avatar.jpg`](brand/x-avatar.jpg) (icono TH), portada [`brand/x-banner.jpg`](brand/x-banner.jpg) (1500×500), bio "Noticias en español, claras y verificadas: inmigración, latinos en EE. UU., política y el mundo. Todos los días. 📰", ubicación Estados Unidos y web https://tuhoy.com.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -142,6 +144,7 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 | [`use_source_photos.py`](scripts/use_source_photos.py) | Pone la foto de la fuente y su crédito en cada nota |
 | [`fix_story_images.py`](scripts/fix_story_images.py) | Sustituye fotos genéricas por imágenes de Wikimedia Commons |
 | [`legal_pages.py`](scripts/legal_pages.py) | Crea/actualiza Contacto, Privacidad y Términos |
+| [`upload_theme.py`](scripts/upload_theme.py) | Empaqueta, sube y activa el tema `themes/tuhoy` |
 | [`upload_routes.py`](scripts/upload_routes.py) | Sube `routes.yaml` a Ghost con copia previa de las rutas activas |
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
 | [`x_posts.py`](scripts/x_posts.py) | Elige las 7 notas del día y escribe/envía los posts de X |
@@ -151,15 +154,15 @@ Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare
 
 ## Tema
 
-El tema propio está en [`themes/tuhoy/`](themes/tuhoy/) (versión en `package.json`). Para publicarlo:
+El tema propio está en [`themes/tuhoy/`](themes/tuhoy/) (versión en `package.json`; súbela en cada cambio). Para publicarlo:
 
 ```bash
-cd themes/tuhoy && zip -r ../../tuhoy-theme.zip . -x '.*'
+python3 scripts/upload_theme.py   # empaqueta, sube y activa el tema
 ```
 
-y súbelo en Ghost → Settings → Design → Change theme → Upload theme.
+También se puede subir el ZIP a mano en Ghost → Settings → Design → Change theme → Upload theme.
 
-Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales y la meta de verificación de Search Console.
+Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales y a @TuHoy_ en X, la meta `twitter:site` y la meta de verificación de Search Console.
 
 **Hook de temas:** Ghost 5 descarga los ZIP de GitHub con permisos 000 y helpers de Ghost 6, lo que rompe la instalación en Docker. El compose carga [`ghost-hooks/sanitize-github-theme.js`](ghost-hooks/sanitize-github-theme.js) para arreglarlo. No borres ese archivo y reinicia TuHoy Ghost en Coolify si lo cambias.
 
@@ -210,7 +213,7 @@ ghost-hooks/         Parche para instalar temas de GitHub en Ghost 5
 themes/tuhoy/        Tema propio
 scripts/             Edición diaria, redacción y mantenimiento
 prompts/             Voz, ejemplos y prompts del redactor
-brand/               Logo y recursos de marca
+brand/               Logo, icono e imágenes del perfil de X
 data/                Estado y fixtures (lo sensible está en .gitignore)
 public/, Dockerfile, nginx.conf   Portada estática anterior; ya no es el origen de tuhoy.com
 ```
