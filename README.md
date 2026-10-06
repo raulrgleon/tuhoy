@@ -1,52 +1,191 @@
 # TuHoy
 
-Periódico en [tuhoy.com](https://tuhoy.com), servido con **Ghost 5 + MySQL 8**.
+Periódico digital en español en [tuhoy.com](https://tuhoy.com): noticias del mundo, inmigración y comunidad latina en EE. UU. Corre sobre **Ghost 5 + MySQL 8**, con un tema propio y una edición diaria automática que parte de fuentes reales.
 
-En el Dell el stack lo gestiona Coolify (servicio **TuHoy Ghost**). HTTPS lo terminan Cloudflare y Traefik. MySQL no se publica a internet.
+Las notas las firma y redacta **Raul Garcia**. Nunca se etiquetan como generadas por IA.
 
-## Admin
+## Índice
 
-https://tuhoy.com/ghost
+- [Arquitectura](#arquitectura)
+- [Puesta en marcha](#puesta-en-marcha)
+- [Variables de entorno](#variables-de-entorno)
+- [Edición diaria](#edición-diaria)
+- [Redacción (writer.py)](#redacción-writerpy)
+- [Scripts](#scripts)
+- [Tema](#tema)
+- [SEO y Google News](#seo-y-google-news)
+- [Correo](#correo)
+- [Cloudflare](#cloudflare)
+- [Copias de seguridad](#copias-de-seguridad)
+- [Estructura del repo](#estructura-del-repo)
 
-La primera visita abre la pantalla de creación de cuenta. No hay credenciales de fábrica.
+## Arquitectura
 
-## Docker Compose (referencia)
+```
+Lectores ──► Cloudflare (DNS, HTTPS, túnel) ──► Traefik (Coolify) ──► Ghost 5 :2368 ──► MySQL 8
+                                                                          ▲
+cron 06:00 America/Chicago ──► scripts/daily_edition.py ──► Admin API ────┘
+                                     │
+                                     └─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
+
+Correo saliente:  Ghost ──► Brevo SMTP (info@tuhoy.com)
+Correo entrante:  info@tuhoy.com ──► Cloudflare Email Routing ──► raulrgleon@gmail.com
+```
+
+- **Servidor:** el Dell de casa (192.168.1.100). Coolify gestiona el servicio **TuHoy Ghost** (panel en `http://192.168.1.100:8000`).
+- **MySQL** no se publica a internet.
+- **Admin:** https://tuhoy.com/ghost
+
+## Puesta en marcha
+
+En producción el stack lo despliega Coolify. El `docker-compose.yml` del repo es la referencia equivalente:
 
 ```bash
-cp .env.example .env
-# edita contraseñas y GHOST_URL
+cp .env.example .env      # rellena contraseñas, claves y GHOST_URL
 docker compose up -d
 ```
 
-Ghost escucha el puerto interno **2368**. No bindees 80/443 en el host si Coolify/Traefik ya los usan.
+Ghost escucha en el puerto interno **2368**. No publiques 80/443 en el host si Traefik/Coolify ya los usan.
 
-## Cloudflare
+La primera visita a `/ghost` abre la pantalla de creación de cuenta; no hay credenciales de fábrica.
 
-Si `tuhoy.com` va por naranja/túnel, el origen suele ver HTTP. Ghost, con `url=https://tuhoy.com`, redirige a HTTPS y el navegador entra en `ERR_TOO_MANY_REDIRECTS`.
+Para los scripts hace falta Python 3.10+ (solo biblioteca estándar) y una **integración personalizada** en Ghost → Settings → Integrations, cuya Admin API key va en `GHOST_ADMIN_API_KEY`.
 
-Hay que mandar a Ghost `X-Forwarded-Proto: https` (etiquetas Traefik del compose / Coolify) **o** que el túnel/origen hable HTTPS. El redirect HTTP→HTTPS de Coolify debe quedarse apagado detrás de Cloudflare.
+## Variables de entorno
 
-## Correo
+Todas viven en `.env` (permisos `600`, ignorado por git). Plantilla: [`.env.example`](.env.example).
 
-SMTP no está configurado. El sitio funciona; newsletters e emails de Ghost no. Añade host/usuario/contraseña reales en Coolify cuando los tengas.
+| Variable | Uso |
+| --- | --- |
+| `MYSQL_*` | Base de datos de Ghost |
+| `GHOST_URL` | URL pública (`https://tuhoy.com`) |
+| `GHOST_ADMIN_API_KEY` | Clave `id:secret` de la integración, para los scripts |
+| `MAIL_*` | SMTP de Brevo para Ghost (ver [Correo](#correo)) |
+| `LLM_PROVIDER` | `openai`, `anthropic`, `gemini` u `openrouter` |
+| `OPENAI_API_KEY` (u otra según proveedor) | Clave del modelo |
+| `LLM_MODEL`, `LLM_BASE_URL` | Opcionales: modelo concreto y endpoint compatible con OpenAI |
+| `LLM_FACTCHECK` | `1` (por defecto) activa la pasada de verificación de hechos |
 
-## Copias de seguridad
-
-1. Volumen de contenido Ghost (`/var/lib/ghost/content`)
-2. Volumen o dump de MySQL (`/var/lib/mysql`)
-
-En Coolify: TuHoy Ghost → Backups.
+En Coolify, las variables del contenedor se editan en TuHoy Ghost → Environment Variables.
 
 ## Edición diaria
 
-Cada día a las 06:00 (hora de Nueva York) corre `scripts/daily_edition.py`: lee RSS reales (BBC Mundo, France 24 y Google News de inmigración/latinos), escribe piezas originales en español y las publica en Ghost. No inventa titulares. El cron lo instala `scripts/install_daily_cron.sh`. Log: `logs/daily.log`.
+[`scripts/daily_edition.py`](scripts/daily_edition.py) corre cada día a las **06:00 America/Chicago**:
+
+1. Lee RSS reales: BBC Mundo, France 24 y Google News (inmigración y latinos).
+2. Descarta duplicados por URL y título (estado en `data/edition_state.json`).
+3. Extrae el texto de la fuente; si no hay texto útil, descarta la pieza. **No inventa noticias.**
+4. Redacta la nota con `writer.py`. Sin clave de modelo, cae al resumen extractivo (etiqueta interna `#resumen-automatico`, no indexable hasta que se reescriba).
+5. Pone la foto de la fuente con su crédito, etiquetas, extracto y meta SEO.
+6. Publica en Ghost. Las piezas dudosas se publican igual con la etiqueta interna `#revisar` y se anotan en `data/review_queue.jsonl`.
+
+Instalar o reinstalar el cron:
+
+```bash
+bash scripts/install_daily_cron.sh
+```
+
+El servidor está en UTC; el cron se lanza a las 11:00 y 12:00 UTC y solo sigue la que coincide con las 06 locales (cubre horario de verano e invierno).
+
+Logs: `logs/daily.log` (actividad) y `logs/daily-errors.log` (errores).
+
+## Redacción (writer.py)
+
+[`scripts/writer.py`](scripts/writer.py) hace tres pasadas con el modelo:
+
+1. **Borrador** ([`prompts/draft.md`](prompts/draft.md)) a partir del texto de la fuente.
+2. **Edición** ([`prompts/edit.md`](prompts/edit.md)) para estilo y claridad.
+3. **Verificación de hechos** ([`prompts/factcheck.md`](prompts/factcheck.md)): compara cada dato con la fuente y marca lo que no cuadra.
+
+La voz del periódico y las frases prohibidas están en [`prompts/voice.md`](prompts/voice.md); hay ejemplos de mala versión, buena versión y nota en [`prompts/examples/`](prompts/examples/).
+
+Evaluar cambios en los prompts con 5 historias guardadas:
+
+```bash
+python3 scripts/eval_writer.py --build   # guarda 5 historias reales en data/eval_stories/
+python3 scripts/eval_writer.py           # compara y escribe data/eval_report.md
+```
+
+## Scripts
+
+| Script | Qué hace |
+| --- | --- |
+| [`daily_edition.py`](scripts/daily_edition.py) | Edición diaria (ver arriba) |
+| [`writer.py`](scripts/writer.py) | Cliente del modelo y las tres pasadas de redacción |
+| [`eval_writer.py`](scripts/eval_writer.py) | Compara redacción extractiva vs. modelo |
+| [`rewrite_published.py`](scripts/rewrite_published.py) | Reescribe notas ya publicadas desde su fuente; conserva URL, fecha e imagen y guarda copia (`--restore` para deshacer) |
+| [`seo_repair.py`](scripts/seo_repair.py) | Repara texto residual, descripciones, títulos SEO e indexación |
+| [`use_source_photos.py`](scripts/use_source_photos.py) | Pone la foto de la fuente y su crédito en cada nota |
+| [`fix_story_images.py`](scripts/fix_story_images.py) | Sustituye fotos genéricas por imágenes de Wikimedia Commons |
+| [`legal_pages.py`](scripts/legal_pages.py) | Crea/actualiza Contacto, Privacidad y Términos |
+| [`upload_routes.py`](scripts/upload_routes.py) | Sube `routes.yaml` a Ghost con copia previa de las rutas activas |
+| [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria |
+
+Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
 ## Tema
 
-Los temas oficiales se instalan desde Ghost → Settings → Site → Theme → Change theme → Install.
+El tema propio está en [`themes/tuhoy/`](themes/tuhoy/) (versión en `package.json`). Para publicarlo:
 
-Ghost 5 baja el ZIP de GitHub con permisos 000, carpetas `.github/` y helpers de Ghost 6 (`social_accounts`). En Docker eso rompe el Install. El compose carga `ghost-hooks/sanitize-github-theme.js` para dejar el ZIP usable en Ghost 5.130. No borres ese archivo. Reinicia TuHoy Ghost en Coolify tras cambiar el hook.
+```bash
+cd themes/tuhoy && zip -r ../../tuhoy-theme.zip . -x '.*'
+```
 
-## Sitio estático anterior
+y súbelo en Ghost → Settings → Design → Change theme → Upload theme.
 
-`public/`, `Dockerfile` y `nginx.conf` son la portada HTML previa. Ya no son el origen de tuhoy.com.
+Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales y la meta de verificación de Search Console.
+
+**Hook de temas:** Ghost 5 descarga los ZIP de GitHub con permisos 000 y helpers de Ghost 6, lo que rompe la instalación en Docker. El compose carga [`ghost-hooks/sanitize-github-theme.js`](ghost-hooks/sanitize-github-theme.js) para arreglarlo. No borres ese archivo y reinicia TuHoy Ghost en Coolify si lo cambias.
+
+## SEO y Google News
+
+- **Rutas:** [`routes.yaml`](routes.yaml) publica `/news-sitemap.xml/` con la plantilla `sitemap-news`. Ghost reserva `/sitemap-*.xml`, por eso no se llama `sitemap-news.xml`.
+- **Subir rutas:** `python3 scripts/upload_routes.py`. Si Ghost responde 403/501 con la clave de integración, súbelo en Ghost → Settings → Labs → Routes.
+- **Sitemaps:** `https://tuhoy.com/sitemap.xml` (de Ghost) y `https://tuhoy.com/news-sitemap.xml` (las 100 notas más recientes, sin las de resumen extractivo `#resumen-automatico`).
+- **Search Console:** propiedad de prefijo de URL `https://tuhoy.com/`, verificada con meta tag en el tema. Ambos sitemaps están enviados.
+
+## Correo
+
+**Saliente (Ghost → lectores):** Brevo SMTP (plan gratis, 300 correos/día).
+
+- Host `smtp-relay.brevo.com`, puerto `587`, `secure=false`.
+- Remitente `TuHoy <info@tuhoy.com>` (`mail__from`).
+- En Ghost → Settings → Membership, la dirección de soporte (`members_support_address`) es `info@tuhoy.com`; así los magic links salen de info@ y no de noreply@.
+- Dominio autenticado en Brevo: registros `brevo-code`, DKIM `brevo1/brevo2._domainkey` y DMARC en Cloudflare.
+- Logs de envío: Brevo → Transactional → Logs.
+- Brevo desactiva las claves SMTP tras 90 días sin uso.
+
+**Entrante (info@tuhoy.com):** Cloudflare Email Routing reenvía `info@tuhoy.com` → `raulrgleon@gmail.com`. El resto de direcciones se descartan (catch-all: Drop). El registro de actividad está en Cloudflare → Email Routing → Activity log.
+
+El reenvío de Namecheap no sirve porque el dominio usa los nameservers de Cloudflare.
+
+**SPF:** `v=spf1 include:_spf.mx.cloudflare.net include:spf.brevo.com ~all`. Debe haber un solo registro SPF; si añades otro proveedor, agrégalo a este.
+
+## Cloudflare
+
+- DNS, HTTPS y túnel (`DNET-HOME`) para `tuhoy.com`.
+- El origen recibe HTTP. Si Ghost (`url=https://tuhoy.com`) no sabe que la petición original era HTTPS, redirige en bucle (`ERR_TOO_MANY_REDIRECTS`). Las etiquetas Traefik del compose mandan `X-Forwarded-Proto: https`. Deja apagado el redirect HTTP→HTTPS de Coolify.
+- Registros MX: `route1/2/3.mx.cloudflare.net` (los gestiona Email Routing; no los edites a mano).
+
+## Copias de seguridad
+
+1. Volumen de contenido de Ghost (`/var/lib/ghost/content`): imágenes, temas, ajustes.
+2. Volumen o dump de MySQL (`/var/lib/mysql`).
+
+En Coolify: TuHoy Ghost → Backups. Los scripts que modifican notas guardan además su propia copia en `data/backup-posts-*.json` (ignorada por git).
+
+## Estructura del repo
+
+```
+docker-compose.yml   Stack de referencia (Ghost + MySQL + correo)
+.env.example         Plantilla de variables
+routes.yaml          Rutas de Ghost (sitemap de noticias)
+ghost-hooks/         Parche para instalar temas de GitHub en Ghost 5
+themes/tuhoy/        Tema propio
+scripts/             Edición diaria, redacción y mantenimiento
+prompts/             Voz, ejemplos y prompts del redactor
+brand/               Logo y recursos de marca
+data/                Estado y fixtures (lo sensible está en .gitignore)
+public/, Dockerfile, nginx.conf   Portada estática anterior; ya no es el origen de tuhoy.com
+```

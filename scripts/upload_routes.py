@@ -1,21 +1,33 @@
 #!/usr/bin/env python3
-"""Sube routes.yaml a Ghost guardando antes una copia de las rutas activas."""
+"""Sube routes.yaml a Ghost guardando antes una copia de las rutas activas.
+
+Si Ghost responde 403/501 con la clave de integración, sube routes.yaml a mano en
+Ghost → Settings → Labs → Routes (requiere sesión de administrador).
+"""
+import importlib.util
 import pathlib
 import time
 import urllib.error
 import urllib.request
 
-ns: dict = {}
-exec(pathlib.Path("/tmp/tuhoy_theme_upload.py").read_text().split("# rebuild zip")[0], ns)
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-ROOT = pathlib.Path("/home/raul/tuhoy")
+spec = importlib.util.spec_from_file_location("daily", ROOT / "scripts" / "daily_edition.py")
+daily = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(daily)
+ENV = daily.load_env()
+BASE = ENV["GHOST_URL"].rstrip("/") + "/ghost/api/admin"
 
 
 def call(method: str, path: str, data: bytes | None = None, ctype: str | None = None):
-    headers = {"Authorization": f"Ghost {ns['jwt']()}", "User-Agent": ns["UA"], "Origin": "https://tuhoy.com"}
+    headers = {
+        "Authorization": f"Ghost {daily.ghost_jwt(ENV['GHOST_ADMIN_API_KEY'])}",
+        "User-Agent": daily.BROWSER,
+        "Origin": "https://tuhoy.com",
+    }
     if ctype:
         headers["Content-Type"] = ctype
-    req = urllib.request.Request(ns["BASE"] + path, data=data, method=method, headers=headers)
+    req = urllib.request.Request(BASE + path, data=data, method=method, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             return resp.status, resp.read().decode()
