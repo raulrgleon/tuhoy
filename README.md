@@ -111,13 +111,15 @@ python3 scripts/eval_writer.py           # compara y escribe data/eval_report.md
 [`scripts/x_posts.py`](scripts/x_posts.py) corre cada día a las **07:00 America/Chicago**, después de la edición:
 
 1. Toma las notas publicadas en las últimas 30 horas, sin `#revisar` ni `#resumen-automatico`, y sin repetir las ya usadas (historial en `data/x_queue.json`).
-2. El modelo elige las **7 más importantes** (prioridad: inmigración y latinos en EE. UU., luego política de EE. UU., luego internacional) y escribe un post por cada una con [`prompts/tweets.md`](prompts/tweets.md).
-3. Asigna una hora a cada post: 7:00, 9:00, 11:00, 13:00, 15:00, 18:00 y 21:00.
+2. El modelo elige las **`X_POSTS` más importantes** (hoy 14) (prioridad: inmigración y latinos en EE. UU., luego política de EE. UU., luego internacional) y escribe un post por cada una con [`prompts/tweets.md`](prompts/tweets.md).
+3. Asigna una hora a cada post: con 14, uno por hora de 7:00 a 20:00 (con 7: 7, 9, 11, 13, 15, 18 y 21 h; o lo que diga `X_HOURS`).
 4. Lo entrega según `X_MODE`:
    - `email` (por defecto, gratis): manda un correo a `X_EMAIL_TO` con los 7 posts y un botón **Publicar en X** que abre X con el texto y el enlace listos. También se pueden programar en X a la hora sugerida.
    - `api`: los publica solos en @tuhoy_. Un cron cada 15 minutos (`--post-due`) publica los que ya tocan.
 
-La API de X es de pago por uso desde 2026 (unos $0.015 por post sin enlace y $0.20 con enlace). Para activar el modo `api`: comprar créditos en [console.x.com](https://console.x.com) con la cuenta @tuhoy_, crear una app con permisos de lectura y escritura, poner las cuatro claves `X_*` en `.env` y cambiar `X_MODE=api`. `X_LINKS` decide cuántos posts llevan enlace.
+La API de X es de pago por uso desde 2026 (unos $0.015 por post sin enlace y $0.20 con enlace). Para activar el modo `api`: comprar créditos en [console.x.com](https://console.x.com) con la cuenta @tuhoy_, crear una app con permisos de lectura y escritura, poner las cuatro claves `X_*` en `.env` y cambiar `X_MODE=api`. `X_LINKS` decide cuántos posts llevan enlace (los más importantes primero).
+
+**Estrategia actual (presupuesto $20/mes):** 14 posts al día, los 2 más importantes con enlace (`X_POSTS=14`, `X_LINKS=2`): unos $0.58 al día, ~$17.40 al mes.
 
 ```bash
 python3 scripts/x_posts.py --dry-run   # muestra los 7 posts sin enviarlos

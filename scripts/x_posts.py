@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Elige las 7 noticias más importantes del día, escribe un post para X por cada una y lo entrega.
+"""Elige las noticias más importantes del día (X_POSTS, 7 por defecto), escribe un post para X por cada una y lo entrega.
 
 Modos (X_MODE en .env):
   email (por defecto)  manda los posts por correo con un botón que abre X con el texto listo.
@@ -102,9 +102,16 @@ def compose(posts: list[dict], n: int) -> list[dict]:
     return out
 
 
-def schedule(tweets: list[dict]) -> None:
+def hours_for(env: dict, n: int) -> list[int]:
+    """X_HOURS (lista separada por comas) o, por defecto, 7 horas fijas; con más posts, uno por hora desde las 7."""
+    if env.get("X_HOURS"):
+        return [int(h) for h in env["X_HOURS"].split(",")]
+    return HOURS if n <= len(HOURS) else list(range(7, 7 + n))
+
+
+def schedule(tweets: list[dict], hours: list[int]) -> None:
     today = datetime.now(TZ).date()
-    for t, hour in zip(tweets, HOURS):
+    for t, hour in zip(tweets, hours):
         t["hora"] = datetime(today.year, today.month, today.day, hour, tzinfo=TZ).isoformat()
 
 
@@ -133,7 +140,7 @@ def send_email(env: dict, tweets: list[dict]) -> None:
     msg = EmailMessage()
     msg["From"] = env.get("MAIL_FROM", "TuHoy <info@tuhoy.com>")
     msg["To"] = to
-    msg["Subject"] = f"Los 7 posts de X de hoy ({fecha})"
+    msg["Subject"] = f"Los {len(tweets)} posts de X de hoy ({fecha})"
     msg.set_content("\n".join(items_txt))
     msg.add_alternative(
         '<div style="font-family:Arial,sans-serif;max-width:560px">'
@@ -217,10 +224,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--post-due", action="store_true")
-    ap.add_argument("-n", type=int, default=7)
+    ap.add_argument("-n", type=int, help="número de posts (por defecto X_POSTS o 7)")
     args = ap.parse_args()
 
     env = writer.load_env()
+    args.n = args.n or int(env.get("X_POSTS") or 7)
     mode = (env.get("X_MODE") or "email").lower()
     if args.post_due:
         if mode == "api":
@@ -236,7 +244,7 @@ def main() -> int:
         log("sin notas nuevas")
         return 0
     tweets = compose(posts, min(args.n, len(posts)))
-    schedule(tweets)
+    schedule(tweets, hours_for(env, args.n))
 
     if args.dry_run:
         for t in tweets:
