@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Edición diaria de TuHoy: fuentes reales -> artículos originales en español -> Ghost.
 
-Corre solo (cron 06:00 America/New_York). No inventa noticias: si no hay texto
+Corre solo (cron 06:00 America/Chicago). Con clave de modelo (ver writer.py) redacta
+notas originales en dos pasadas; sin clave, cae al resumen extractivo. No inventa noticias: si no hay texto
 útil en la fuente, descarta la pieza. Deduplica por URL y por título.
 """
 from __future__ import annotations
@@ -25,6 +26,9 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import writer  # noqa: E402
 
 ROOT = Path("/home/raul/tuhoy")
 ENV_PATH = ROOT / ".env"
@@ -414,6 +418,8 @@ def looks_like_nav(sent: str) -> bool:
 
 
 AUTO_TAG = "#resumen-automatico"
+IA_TAG = "#ia-asistida"
+REVIEW_TAG = "#revisar"
 SENTENCE_RE = re.compile(r"(?<=[\.\!\?»\"”])\s+(?=[¿¡«\"“A-ZÁÉÍÓÚÑ])")
 
 
@@ -484,7 +490,7 @@ BYLINE_RE = re.compile(
 )
 
 
-def extract_article(url: str) -> str:
+def extract_article(url: str, limit: int = 1800) -> str:
     try:
         raw = http_get(url, timeout=18).decode("utf-8", "replace")
     except Exception as e:
@@ -503,7 +509,7 @@ def extract_article(url: str) -> str:
         if re.search(r"(cookie|suscríb|newsletter|aceptar|copyright ©)", sent, re.I):
             continue
         cut.append(sent.strip())
-        if sum(len(x) for x in cut) > 1800:
+        if sum(len(x) for x in cut) > limit:
             break
     return " ".join(cut)
 
@@ -795,15 +801,36 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
     if len(text) < 280:
         log(f"skip short: {title}")
         return False
-    try:
-        body = write_html(title, text, item.get("source") or "", article_url)
-    except ValueError as e:
-        log(f"skip write {title}: {e}")
-        return False
+    source_title = title
+    written = None
+    if writer.enabled():
+        full = (item.get("desc") or "") + " " + extract_article(article_url, limit=9000)
+        sources = [
+            {
+                "name": item.get("source") or urllib.parse.urlparse(article_url).netloc.replace("www.", ""),
+                "url": clean_source_url(article_url),
+                "title": source_title,
+                "text": re.sub(r"\s+", " ", full).strip(),
+            }
+        ]
+        try:
+            written = writer.write_article(sources, inmigracion=force_inmig, log=log)
+        except Exception as e:
+            log(f"writer fail, extractivo {title}: {e}")
+    if written:
+        title = written["headline"]
+        body = written["html"]
+        excerpt = written["deck"]
+    else:
+        try:
+            body = write_html(title, text, item.get("source") or "", article_url)
+        except ValueError as e:
+            log(f"skip write {title}: {e}")
+            return False
+        excerpt = excerpt_es(text, title)
 
-    tags = classify(title, text, force_inmig)
+    tags = classify(source_title, text, force_inmig)
     slug_tag = primary_slug(tags)
-    excerpt = excerpt_es(text, title)
     img_url = None
     caption = ""
     picked = source_photo(article_url)
@@ -816,6 +843,21 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
         if img_url and caption:
             body += f"\n<p><em>{html.escape(caption)}</em></p>"
 
+    if written:
+        # Redacción original: indexable. Si el verificador dejó dudas o las fuentes son escasas,
+        # se publica igual pero marcada para revisión y fuera del índice.
+        internal = [{"name": IA_TAG}]
+        if written["flagged"]:
+            internal += [{"name": REVIEW_TAG}, {"name": AUTO_TAG}]
+            writer.queue_for_review(
+                written,
+                clean_source_url(article_url),
+                "fuentes escasas" if written["thin_sources"] else "afirmaciones sin sustento",
+            )
+    else:
+        # Texto extractivo de la fuente: no indexable hasta que la redacción lo reescriba.
+        internal = [{"name": AUTO_TAG}]
+
     payload = {
         "posts": [
             {
@@ -827,8 +869,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
                 "html": body,
                 "status": "published",
                 "featured": featured,
-                # Texto extractivo de la fuente: no indexable hasta que la redacción lo reescriba.
-                "tags": [{"name": t} for t in tags] + [{"name": AUTO_TAG}],
+                "tags": [{"name": t} for t in tags] + internal,
                 "feature_image": img_url,
                 "feature_image_caption": caption,
                 "feature_image_alt": title,
@@ -844,8 +885,10 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
     log(f"published {post.get('slug')} :: {title}")
     state["seen_urls"].append(item["url"])
     state["seen_urls"].append(article_url)
-    state["seen_titles"].append(norm_title(title))
-    known.append(title)
+    state["seen_titles"].append(norm_title(source_title))
+    known.append(source_title)
+    if title != source_title:
+        known.append(title)
     return True
 
 

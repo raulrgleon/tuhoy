@@ -13,3 +13,5 @@ __pycache__/
 *.pyc
 data/routes-backup-*.yaml
 headline.zip
+data/review_queue.jsonl
+data/eval_report.md
