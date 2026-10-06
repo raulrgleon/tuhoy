@@ -702,6 +702,17 @@ button:focus-visible {
     font-size: 0.82rem;
 }
 .th-article-body hr { border: 0; border-top: 1px solid var(--color-rule); }
+.th-article-body .th-tip {
+    margin-top: 2.4em;
+    padding: 1.1em 1.2em 1.2em;
+    border-top: 3px double var(--color-text);
+    border-bottom: 1px solid var(--color-rule);
+    font-size: 0.92em;
+}
+.th-article-body .th-tip p { margin: 0 0 .7em; }
+.th-article-body .th-tip .th-tip-title { font-weight: 700; font-size: 1.08em; margin-bottom: .35em; }
+.th-article-body .th-tip a.th-tip-btn { text-decoration: none; color: #fff; }
+.th-article-body .th-tip a.th-tip-btn:hover { color: #fff; }
 .th-article-body em { font-style: italic; }
 .th-article-body pre {
     max-width: 100%;

@@ -14,6 +14,7 @@ Las notas las firma y redacta **Raul Garcia**. Nunca se etiquetan como generadas
 - [Scripts](#scripts)
 - [Tema](#tema)
 - [SEO y Google News](#seo-y-google-news)
+- [Contacto del diario](#contacto-del-diario)
 - [Correo](#correo)
 - [Cloudflare](#cloudflare)
 - [Copias de seguridad](#copias-de-seguridad)
@@ -143,7 +144,7 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 | [`seo_repair.py`](scripts/seo_repair.py) | Repara texto residual, descripciones, títulos SEO e indexación |
 | [`use_source_photos.py`](scripts/use_source_photos.py) | Pone la foto de la fuente y su crédito en cada nota |
 | [`fix_story_images.py`](scripts/fix_story_images.py) | Sustituye fotos genéricas por imágenes de Wikimedia Commons |
-| [`legal_pages.py`](scripts/legal_pages.py) | Crea/actualiza Contacto, Privacidad y Términos |
+| [`legal_pages.py`](scripts/legal_pages.py) | Crea/actualiza Contacto, Privacidad y Términos (`--only contacto` para tocar una sola; el teléfono está en `PHONE`) |
 | [`upload_theme.py`](scripts/upload_theme.py) | Empaqueta, sube y activa el tema `themes/tuhoy` |
 | [`upload_routes.py`](scripts/upload_routes.py) | Sube `routes.yaml` a Ghost con copia previa de las rutas activas |
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
@@ -163,7 +164,7 @@ python3 scripts/upload_theme.py   # empaqueta, sube y activa el tema
 
 También se puede subir el ZIP a mano en Ghost → Settings → Design → Change theme → Upload theme.
 
-Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales y a @TuHoy_ en X, la meta `twitter:site` y la meta de verificación de Search Console.
+Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a @TuHoy_ en X y al WhatsApp/teléfono del diario, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, la meta `twitter:site` y la meta de verificación de Search Console.
 
 **Hook de temas:** Ghost 5 descarga los ZIP de GitHub con permisos 000 y helpers de Ghost 6, lo que rompe la instalación en Docker. El compose carga [`ghost-hooks/sanitize-github-theme.js`](ghost-hooks/sanitize-github-theme.js) para arreglarlo. No borres ese archivo y reinicia TuHoy Ghost en Coolify si lo cambias.
 
@@ -173,6 +174,11 @@ Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces leg
 - **Subir rutas:** `python3 scripts/upload_routes.py`. Si Ghost responde 403/501 con la clave de integración, súbelo en Ghost → Settings → Labs → Routes.
 - **Sitemaps:** `https://tuhoy.com/sitemap.xml` (de Ghost) y `https://tuhoy.com/news-sitemap.xml` (las 100 notas más recientes, sin las de resumen extractivo `#resumen-automatico`).
 - **Search Console:** propiedad de prefijo de URL `https://tuhoy.com/`, verificada con meta tag en el tema. Ambos sitemaps están enviados.
+
+## Contacto del diario
+
+- Correo: info@tuhoy.com (reenvía a Gmail, ver abajo).
+- Teléfono y WhatsApp: **(402) 824-0388** (`https://wa.me/14028240388`, `tel:+14028240388`). Aparece en el pie, al final de cada nota y en `/contacto/`. Si cambia, edita `themes/tuhoy/partials/footer.hbs`, `themes/tuhoy/post.hbs` y `PHONE`/`PHONE_WA` en `scripts/legal_pages.py`.
 
 ## Correo
 

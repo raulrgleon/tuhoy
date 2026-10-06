@@ -3,6 +3,7 @@
 
   python3 scripts/legal_pages.py                       # borradores con el correo pendiente
   python3 scripts/legal_pages.py --email x@tuhoy.com --publish
+  python3 scripts/legal_pages.py --email info@tuhoy.com --publish --only contacto
 """
 from __future__ import annotations
 
@@ -14,6 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import daily_edition as daily  # noqa: E402
 
 UPDATED = "5 de octubre de 2026"
+PHONE = "(402) 824-0388"
+PHONE_WA = "14028240388"
 
 PAGES = {
     "contacto": (
@@ -21,10 +24,11 @@ PAGES = {
         "Cómo escribir a la redacción de TuHoy, enviar una corrección o proponer una historia.",
         """
 <p>En TuHoy leemos todos los mensajes. Escríbenos a <a href="mailto:{email}">{email}</a>.</p>
+<p><strong>WhatsApp y teléfono:</strong> <a href="https://wa.me/{phone_wa}">{phone}</a>. Puedes escribirnos por WhatsApp, mandar fotos o llamarnos al <a href="tel:+{phone_wa}">{phone}</a>.</p>
 <h2>Correcciones</h2>
 <p>Si encuentras un error en una nota, cuéntanos cuál es, en qué nota está y, si puedes, la fuente que lo demuestra. Revisamos cada aviso y, cuando corresponde, corregimos la nota e indicamos al final qué cambió.</p>
 <h2>Propón una historia</h2>
-<p>¿Pasa algo en tu comunidad que nadie está contando? Escríbenos con lo que sabes, dónde ocurre y cómo podemos contactarte. Si nos pides reserva sobre tu identidad, la respetamos.</p>
+<p>¿Pasa algo en tu comunidad que nadie está contando? Escríbenos por correo o por <a href="https://wa.me/{phone_wa}">WhatsApp al {phone}</a> con lo que sabes, dónde ocurre y cómo podemos contactarte. Si nos pides reserva sobre tu identidad, la respetamos.</p>
 <h2>Suscripción</h2>
 <p>Para darte de baja del boletín, usa el enlace que aparece al pie de cada correo o entra a tu cuenta desde el botón «Entrar» del sitio.</p>
 """,
@@ -91,6 +95,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", default="")
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument("--only", choices=sorted(PAGES), help="actualiza solo esta página")
     args = parser.parse_args()
     if args.publish and not args.email:
         print("Para publicar hace falta --email")
@@ -103,10 +108,12 @@ def main() -> int:
     existing = {p["slug"]: p for p in resp.get("pages") or []}
 
     for slug, (title, excerpt, body) in PAGES.items():
+        if args.only and slug != args.only:
+            continue
         page = {
             "title": title,
             "slug": slug,
-            "html": body.strip().format(email=email, updated=UPDATED),
+            "html": body.strip().format(email=email, updated=UPDATED, phone=PHONE, phone_wa=PHONE_WA),
             "custom_excerpt": excerpt,
             "meta_description": excerpt,
             "status": "published" if args.publish else "draft",
