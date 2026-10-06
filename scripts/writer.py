@@ -15,11 +15,6 @@ ROOT = Path("/home/raul/tuhoy")
 PROMPTS = ROOT / "prompts"
 REVIEW_QUEUE = ROOT / "data" / "review_queue.jsonl"
 
-AI_LABEL = (
-    "Nota redactada con asistencia de inteligencia artificial a partir de las fuentes citadas. "
-    "¿Ves un error? Escríbenos y lo corregimos."
-)
-
 PROVIDERS = {
     "openai": {"base": "https://api.openai.com/v1", "model": "gpt-5.5", "key": "OPENAI_API_KEY"},
     "openrouter": {"base": "https://openrouter.ai/api/v1", "model": "openai/gpt-4.1", "key": "OPENROUTER_API_KEY"},
@@ -262,7 +257,7 @@ def sources_html(sources: list[dict]) -> str:
         f'<a href="{html.escape(s.get("url") or "")}">{html.escape(s.get("title") or "artículo original")}</a></li>'
         for s in sources
     )
-    return f"<h2>Fuentes</h2>\n<ul>{items}</ul>\n<p><em>{html.escape(AI_LABEL)}</em></p>"
+    return f"<h2>Fuentes</h2>\n<ul>{items}</ul>"
 
 
 # ---------- pasadas ----------
