@@ -34,5 +34,29 @@ for name in invite-user.html invite-user-by-api-key.html; do
         echo "[overrides] $(date '+%F %T') actualizado $name"
     fi
 done
+
+# El asunto de la invitación está en el código de Ghost y se carga al arrancar:
+# si hay que parchearlo, se reinicia Ghost (SIGTERM; Docker lo levanta con restart: unless-stopped).
+invites="$ghost/core/server/services/invites/Invites.js"
+SUBJECT="Te invitamos a unirte a {blogName}"
+if grep -q -e "has invited you to join {blogName}" -e "You have been invited to join {blogName}" "$invites"; then
+    sed -i \
+        -e "s|'{invitedByName} has invited you to join {blogName}'|'$SUBJECT'|" \
+        -e "s|'You have been invited to join {blogName}'|'$SUBJECT'|" \
+        "$invites"
+    echo "[overrides] $(date '+%F %T') asunto parcheado; reiniciando Ghost"
+    kill -TERM "$pid"
+    for _ in $(seq 1 60); do
+        sleep 2
+        code=$(curl -s -o /dev/null -w '%{http_code}' -A 'Mozilla/5.0' "$SITE_URL/" || true)
+        if [ "$code" = 200 ]; then
+            echo "[overrides] $(date '+%F %T') Ghost de nuevo en línea"
+            exit 0
+        fi
+    done
+    echo "[overrides] Ghost no responde 2 min después del reinicio; revisa TuHoy Ghost en Coolify" >&2
+    exit 1
+fi
+
 [ "$changed" = 0 ] && [ -t 1 ] && echo "[overrides] ya estaba al día"
 exit 0
