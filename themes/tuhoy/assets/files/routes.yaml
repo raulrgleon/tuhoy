@@ -1,5 +1,5 @@
 routes:
-  /sitemap-news.xml/:
+  /news-sitemap.xml/:
     template: sitemap-news
     content_type: text/xml
 
