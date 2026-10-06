@@ -21,7 +21,7 @@ AI_LABEL = (
 )
 
 PROVIDERS = {
-    "openai": {"base": "https://api.openai.com/v1", "model": "gpt-4.1", "key": "OPENAI_API_KEY"},
+    "openai": {"base": "https://api.openai.com/v1", "model": "gpt-5.5", "key": "OPENAI_API_KEY"},
     "openrouter": {"base": "https://openrouter.ai/api/v1", "model": "openai/gpt-4.1", "key": "OPENROUTER_API_KEY"},
     "gemini": {
         "base": "https://generativelanguage.googleapis.com/v1beta/openai",
@@ -110,7 +110,7 @@ def _post(url: str, headers: dict, body: dict, timeout: int = 180) -> dict:
     raise WriterError("sin respuesta")
 
 
-def chat(cfg: dict, prompt: str, temperature: float, max_tokens: int = 4000) -> str:
+def chat(cfg: dict, prompt: str, temperature: float, max_tokens: int = 4000, reasoning: str = "none") -> str:
     if cfg["provider"] == "anthropic":
         resp = _post(
             f"{cfg['base']}/messages",
@@ -123,16 +123,17 @@ def chat(cfg: dict, prompt: str, temperature: float, max_tokens: int = 4000) -> 
             },
         )
         return "".join(part.get("text", "") for part in resp.get("content") or [])
-    resp = _post(
-        f"{cfg['base']}/chat/completions",
-        {"Authorization": f"Bearer {cfg['key']}"},
-        {
-            "model": cfg["model"],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "messages": [{"role": "user", "content": prompt}],
-        },
-    )
+    body = {"model": cfg["model"], "messages": [{"role": "user", "content": prompt}]}
+    if re.match(r"(?:openai/)?(?:gpt-5|o\d)", cfg["model"]):
+        # Modelos de razonamiento: la temperatura solo se admite con el razonamiento apagado.
+        body["max_completion_tokens"] = max_tokens if reasoning == "none" else max_tokens * 4
+        body["reasoning_effort"] = reasoning
+        if reasoning == "none":
+            body["temperature"] = temperature
+    else:
+        body["max_tokens"] = max_tokens
+        body["temperature"] = temperature
+    resp = _post(f"{cfg['base']}/chat/completions", {"Authorization": f"Bearer {cfg['key']}"}, body)
     return resp["choices"][0]["message"]["content"] or ""
 
 
@@ -290,7 +291,7 @@ def factcheck_pass(cfg: dict, sources: list[dict], article: dict) -> list[dict]:
         sources=format_sources(sources),
         article=json.dumps({k: article.get(k) for k in ("headline", "deck", "body")}, ensure_ascii=False, indent=1),
     )
-    result = parse_json(chat(cfg, prompt, temperature=0.0, max_tokens=2000))
+    result = parse_json(chat(cfg, prompt, temperature=0.0, max_tokens=2000, reasoning="medium"))
     return [c for c in result.get("unsupported") or [] if c.get("claim")]
 
 
