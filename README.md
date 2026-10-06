@@ -79,7 +79,7 @@ En Coolify, las variables del contenedor se editan en TuHoy Ghost → Environmen
 5. Pone la foto de la fuente con su crédito, etiquetas, extracto y meta SEO.
 6. Publica en Ghost. Las piezas dudosas se publican igual con la etiqueta interna `#revisar` y se anotan en `data/review_queue.jsonl`.
 
-Instalar o reinstalar el cron:
+Instalar o reinstalar el cron (incluye los posts de X):
 
 ```bash
 bash scripts/install_daily_cron.sh
@@ -106,6 +106,26 @@ python3 scripts/eval_writer.py --build   # guarda 5 historias reales en data/eva
 python3 scripts/eval_writer.py           # compara y escribe data/eval_report.md
 ```
 
+## Posts diarios en X (@tuhoy_)
+
+[`scripts/x_posts.py`](scripts/x_posts.py) corre cada día a las **07:00 America/Chicago**, después de la edición:
+
+1. Toma las notas publicadas en las últimas 30 horas, sin `#revisar` ni `#resumen-automatico`, y sin repetir las ya usadas (historial en `data/x_queue.json`).
+2. El modelo elige las **7 más importantes** (prioridad: inmigración y latinos en EE. UU., luego política de EE. UU., luego internacional) y escribe un post por cada una con [`prompts/tweets.md`](prompts/tweets.md).
+3. Asigna una hora a cada post: 7:00, 9:00, 11:00, 13:00, 15:00, 18:00 y 21:00.
+4. Lo entrega según `X_MODE`:
+   - `email` (por defecto, gratis): manda un correo a `X_EMAIL_TO` con los 7 posts y un botón **Publicar en X** que abre X con el texto y el enlace listos. También se pueden programar en X a la hora sugerida.
+   - `api`: los publica solos en @tuhoy_. Un cron cada 15 minutos (`--post-due`) publica los que ya tocan.
+
+La API de X es de pago por uso desde 2026 (unos $0.015 por post sin enlace y $0.20 con enlace). Para activar el modo `api`: comprar créditos en [console.x.com](https://console.x.com) con la cuenta @tuhoy_, crear una app con permisos de lectura y escritura, poner las cuatro claves `X_*` en `.env` y cambiar `X_MODE=api`. `X_LINKS` decide cuántos posts llevan enlace.
+
+```bash
+python3 scripts/x_posts.py --dry-run   # muestra los 7 posts sin enviarlos
+python3 scripts/x_posts.py             # elige, escribe y envía (o encola)
+```
+
+Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -120,7 +140,8 @@ python3 scripts/eval_writer.py           # compara y escribe data/eval_report.md
 | [`legal_pages.py`](scripts/legal_pages.py) | Crea/actualiza Contacto, Privacidad y Términos |
 | [`upload_routes.py`](scripts/upload_routes.py) | Sube `routes.yaml` a Ghost con copia previa de las rutas activas |
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
-| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria |
+| [`x_posts.py`](scripts/x_posts.py) | Elige las 7 notas del día y escribe/envía los posts de X |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria y de los posts de X |
 
 Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
