@@ -41,9 +41,10 @@ FEEDS_GENERAL = [
     "https://feeds.bbci.co.uk/mundo/rss.xml",
     "https://www.france24.com/es/rss",
 ]
+# Google News cifra sus enlaces y no deja llegar al artículo: solo feeds con URL directa.
 FEEDS_INMIGRACION = [
-    "https://news.google.com/rss/search?q=inmigraci%C3%B3n+OR+ICE+OR+latinos&hl=es-419&gl=US&ceid=US:es-419",
-    "https://news.google.com/rss/search?q=inmigracion+latinos+EEUU&hl=es&gl=MX&ceid=MX:es",
+    "https://www.laopinion.com/categoria/inmigracion/feed/",
+    "https://www.eldiariony.com/categoria/inmigracion/feed/",
 ]
 
 # Páginas que suelen dar texto completo (la edición las reescribe; no se copian).
@@ -478,16 +479,23 @@ def clean_source_url(url: str) -> str:
     return urllib.parse.urlunsplit((parts.scheme, parts.netloc, parts.path, urllib.parse.urlencode(query), ""))
 
 
+BYLINE_RE = re.compile(
+    r"^(?:Crédito:[^|]{2,60}\|\s*\S+\s+)?Por\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+){1,3}\s+(?=[A-ZÁÉÍÓÚÑ¿¡«“\"])"
+)
+
+
 def extract_article(url: str) -> str:
     try:
         raw = http_get(url, timeout=18).decode("utf-8", "replace")
     except Exception as e:
         log(f"extract fail {url} {e}")
         return ""
+    raw = re.sub(r"<figcaption.*?</figcaption>", " ", raw, flags=re.S | re.I)
     text = strip_html(raw)
     # drop leftover menus / cookies
     cut = []
     for sent in re.split(r"(?<=[\.\!\?])\s+", text):
+        sent = BYLINE_RE.sub("", sent)
         if len(sent) < 50:
             continue
         if looks_like_nav(sent):
@@ -514,7 +522,12 @@ def similar(a: str, b: str) -> bool:
     ta, tb = tokens(a), tokens(b)
     if not ta or not tb:
         return False
-    return len(ta & tb) / len(ta | tb) >= 0.55
+    if len(ta & tb) / len(ta | tb) >= 0.55:
+        return True
+    # Misma noticia con otro verbo: "convoca" / "decidió convocar".
+    sa, sb = {w[:6] for w in ta}, {w[:6] for w in tb}
+    shared = len(sa & sb)
+    return shared >= 4 and shared / min(len(sa), len(sb)) >= 0.5
 
 
 def classify(title: str, text: str, force_inmig: bool) -> list[str]:
