@@ -148,7 +148,8 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 | [`upload_routes.py`](scripts/upload_routes.py) | Sube `routes.yaml` a Ghost con copia previa de las rutas activas |
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
 | [`x_posts.py`](scripts/x_posts.py) | Elige las 7 notas del día y escribe/envía los posts de X |
-| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria y de los posts de X |
+| [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, de los posts de X y de las plantillas de correo |
 
 Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
@@ -188,6 +189,8 @@ Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces leg
 
 El reenvío de Namecheap no sirve porque el dominio usa los nameservers de Cloudflare.
 
+**Invitación al equipo (staff) en español:** Ghost no deja editar este correo desde el panel. La versión propia está en [`ghost-overrides/mail/invite-user.html`](ghost-overrides/mail/invite-user.html) (título "¡Bienvenido!", botón "Activar mi cuenta", icono de TuHoy y ayuda en info@tuhoy.com). [`scripts/apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) la copia sobre `invite-user.html` e `invite-user-by-api-key.html` de Ghost entrando al contenedor por `/proc/<pid>/root` (Ghost corre con el mismo usuario, uid 1000). Ghost lee la plantilla en cada envío, así que no hace falta reiniciar. El cron la vuelve a aplicar cada 10 minutos porque Coolify recrea el contenedor en cada despliegue (registro en `logs/overrides.log`). El asunto ("… has invited you to join TuHoy") sigue en inglés: está en el código de Ghost (`core/server/services/invites/Invites.js`) y cambiarlo exige reiniciar Ghost. Si Ghost se actualiza, revisa que las variables de la plantilla (`{{resetLink}}`, `{{ siteUrl }}`, `{{recipientEmail}}`) sigan existiendo.
+
 **SPF:** `v=spf1 include:_spf.mx.cloudflare.net include:spf.brevo.com ~all`. Debe haber un solo registro SPF; si añades otro proveedor, agrégalo a este.
 
 ## Cloudflare
@@ -210,6 +213,7 @@ docker-compose.yml   Stack de referencia (Ghost + MySQL + correo)
 .env.example         Plantilla de variables
 routes.yaml          Rutas de Ghost (sitemap de noticias)
 ghost-hooks/         Parche para instalar temas de GitHub en Ghost 5
+ghost-overrides/     Plantillas de correo propias que sustituyen a las de Ghost
 themes/tuhoy/        Tema propio
 scripts/             Edición diaria, redacción y mantenimiento
 prompts/             Voz, ejemplos y prompts del redactor

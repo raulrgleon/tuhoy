@@ -8,9 +8,10 @@ DIR=/home/raul/tuhoy
 EDITION="0 11,12 * * * [ \"\$(TZ=America/Chicago date +\\%H)\" = \"06\" ] && TZ=America/Chicago $PY $DIR/scripts/daily_edition.py > /dev/null 2>> $DIR/logs/daily-errors.log"
 X_DAILY="0 12,13 * * * [ \"\$(TZ=America/Chicago date +\\%H)\" = \"07\" ] && $PY $DIR/scripts/x_posts.py > /dev/null 2>> $DIR/logs/x-errors.log"
 X_DUE="*/15 * * * * $PY $DIR/scripts/x_posts.py --post-due > /dev/null 2>> $DIR/logs/x-errors.log"
+OVERRIDES="*/10 * * * * $DIR/scripts/apply_ghost_overrides.sh >> $DIR/logs/overrides.log 2>&1"
 mkdir -p $DIR/logs $DIR/data
-chmod 755 $DIR/scripts/daily_edition.py $DIR/scripts/x_posts.py
-(crontab -l 2>/dev/null | grep -v -e 'tuhoy/scripts/daily_edition.py' -e 'tuhoy/scripts/x_posts.py' || true
- echo "$EDITION"; echo "$X_DAILY"; echo "$X_DUE") | crontab -
+chmod 755 $DIR/scripts/daily_edition.py $DIR/scripts/x_posts.py $DIR/scripts/apply_ghost_overrides.sh
+(crontab -l 2>/dev/null | grep -v -e 'tuhoy/scripts/daily_edition.py' -e 'tuhoy/scripts/x_posts.py' -e 'tuhoy/scripts/apply_ghost_overrides.sh' || true
+ echo "$EDITION"; echo "$X_DAILY"; echo "$X_DUE"; echo "$OVERRIDES") | crontab -
 echo "cron instalado:"
 crontab -l
