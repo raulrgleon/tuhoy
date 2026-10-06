@@ -101,7 +101,7 @@ def main() -> int:
         return 1
     run_new = not args.old_only and writer.enabled()
     if not args.old_only and not run_new:
-        print("Sin clave de modelo en .env: solo se mide la versión antigua (ver README de prompts).\n")
+        print("Sin clave de modelo en .env: solo se mide la versión antigua (añade LLM_PROVIDER y su clave, ver .env.example).\n")
 
     report = ["# Evaluación de redacción: antigua vs nueva\n"]
     totals = {"old": [], "new": []}
