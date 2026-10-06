@@ -844,11 +844,11 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
             body += f"\n<p><em>{html.escape(caption)}</em></p>"
 
     if written:
-        # Redacción original: indexable. Si el verificador dejó dudas o las fuentes son escasas,
-        # se publica igual pero marcada para revisión y fuera del índice.
+        # Redacción original: indexable. Las frases sin sustento ya se eliminaron; #revisar solo
+        # la pone en la cola de revisión humana.
         internal = [{"name": IA_TAG}]
         if written["flagged"]:
-            internal += [{"name": REVIEW_TAG}, {"name": AUTO_TAG}]
+            internal.append({"name": REVIEW_TAG})
             writer.queue_for_review(
                 written,
                 clean_source_url(article_url),

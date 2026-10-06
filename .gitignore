@@ -15,3 +15,4 @@ data/routes-backup-*.yaml
 headline.zip
 data/review_queue.jsonl
 data/eval_report.md
+data/backup-posts-*.json

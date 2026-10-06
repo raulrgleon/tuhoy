@@ -142,10 +142,12 @@ def parse_json(text: str) -> dict:
     fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.S)
     if fence:
         text = fence.group(1)
-    start, end = text.find("{"), text.rfind("}")
-    if start < 0 or end < start:
+    start = text.find("{")
+    if start < 0:
         raise WriterError(f"respuesta sin JSON: {text[:200]}")
-    return json.loads(text[start : end + 1])
+    # strict=False admite saltos de línea crudos dentro de cadenas; raw_decode ignora texto sobrante.
+    obj, _ = json.JSONDecoder(strict=False).raw_decode(text[start:])
+    return obj
 
 
 # ---------- prompts ----------
@@ -223,7 +225,11 @@ def metrics(text: str) -> dict:
 
 def inline(text: str) -> str:
     text = html.escape(text, quote=False)
-    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+    return ITALIC_RE.sub(r"<em>\1</em>", text)
+
+
+ITALIC_RE = re.compile(r"(?<![\w*])\*([^*\n]+?)\*(?![\w*])")
 
 
 def md_to_html(body: str) -> str:
@@ -305,8 +311,25 @@ def drop_claims(article: dict, claims: list[dict]) -> dict:
         for sent in sentences(body):
             if text in sent or (len(text) > 40 and text[:40] in sent):
                 body = body.replace(sent, "").replace("\n\n\n", "\n\n")
-    article["body"] = re.sub(r"\n{3,}", "\n\n", body).strip()
+    article["body"] = drop_empty_sections(re.sub(r"\n{3,}", "\n\n", body).strip())
     return article
+
+
+def drop_empty_sections(body: str) -> str:
+    blocks = [b for b in re.split(r"\n\s*\n", body) if b.strip()]
+    kept = []
+    for i, block in enumerate(blocks):
+        is_heading = block.lstrip().startswith("#")
+        next_is_heading = i + 1 >= len(blocks) or blocks[i + 1].lstrip().startswith("#")
+        if is_heading and next_is_heading:
+            continue
+        kept.append(block)
+    return "\n\n".join(kept)
+
+
+def claim_hits(claims: list[dict], text: str) -> bool:
+    text = (text or "").strip()
+    return any(c["claim"].strip().strip('"“”') in text or text in c["claim"] for c in claims if text)
 
 
 def validate(article: dict) -> None:
@@ -348,6 +371,16 @@ def write_article(sources: list[dict], inmigracion: bool = False, cfg: dict | No
             validate(final)
             unsupported = factcheck_pass(cfg, sources, final)
             if unsupported:
+                if claim_hits(unsupported, final["headline"]) or claim_hits(unsupported, final["deck"]):
+                    fixed = edit_pass(
+                        cfg,
+                        sources,
+                        final,
+                        "El titular o la entradilla afirman algo que las fuentes no sostienen tal cual "
+                        "(por ejemplo, dan por hecho lo que la fuente presenta como acusación). "
+                        "Reescríbelos con atribución o con la cautela de la fuente.",
+                    )
+                    final["headline"], final["deck"] = fixed["headline"], fixed["deck"]
                 final = drop_claims(final, unsupported)
 
     headline = re.sub(r"\s+", " ", final["headline"]).strip()
@@ -357,7 +390,7 @@ def write_article(sources: list[dict], inmigracion: bool = False, cfg: dict | No
     article = {
         "headline": headline,
         "deck": re.sub(r"\s+", " ", final["deck"]).strip(),
-        "body": final["body"].strip(),
+        "body": drop_empty_sections(final["body"].strip()),
         "tier": final.get("tier") or "",
         "thin_sources": bool(final.get("thin_sources")),
         "changes": final.get("changes") or [],
