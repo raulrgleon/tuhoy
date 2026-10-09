@@ -37,16 +37,7 @@
 
     <nav class="th-nav" aria-label="Secciones">
         <div class="th-wrap">
-            <ul class="nav">
-                <li class="nav-inicio{{#is "home"}} nav-current{{/is}}"><a href="{{@site.url}}">Inicio</a></li>
-                <li class="nav-mundo{{#match tag.slug "=" "mundo"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "mundo"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/mundo/">Mundo</a></li>
-                <li class="nav-inmigracion{{#match tag.slug "=" "inmigracion"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "inmigracion"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/inmigracion/">Inmigración</a></li>
-                <li class="nav-politica{{#match tag.slug "=" "politica"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "politica"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/politica/">Política</a></li>
-                <li class="nav-economia{{#match tag.slug "=" "economia"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "economia"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/economia/">Economía</a></li>
-                <li class="nav-tecnologia{{#match tag.slug "=" "tecnologia"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "tecnologia"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/tecnologia/">Tecnología</a></li>
-                <li class="nav-salud{{#match tag.slug "=" "salud"}} nav-current{{/match}}{{#is "post"}}{{#post}}{{#match primary_tag.slug "=" "salud"}} nav-current{{/match}}{{/post}}{{/is}}"><a href="{{@site.url}}/tag/salud/">Salud</a></li>
-                <li class="nav-about{{#is "page"}}{{#match slug "=" "about"}} nav-current{{/match}}{{/is}}"><a href="{{@site.url}}/about/">Quiénes somos</a></li>
-            </ul>
+            {{navigation}}
         </div>
     </nav>
 </header>
@@ -61,23 +52,8 @@
         </div>
         <div class="th-drawer-groups">
             <section>
-                <h2>Noticias</h2>
-                <ul>
-                    <li><a href="{{@site.url}}">Inicio</a></li>
-                    <li><a href="{{@site.url}}/#ultima-hora">Última hora</a></li>
-                    <li><a href="{{@site.url}}/tag/mundo/">Mundo</a></li>
-                    <li><a href="{{@site.url}}/tag/inmigracion/">Inmigración</a></li>
-                    <li><a href="{{@site.url}}/tag/politica/">Política</a></li>
-                    <li><a href="{{@site.url}}/tag/economia/">Economía</a></li>
-                </ul>
-            </section>
-            <section>
-                <h2>Temas</h2>
-                <ul>
-                    <li><a href="{{@site.url}}/tag/tecnologia/">Tecnología</a></li>
-                    <li><a href="{{@site.url}}/tag/salud/">Salud</a></li>
-                    <li><a href="{{@site.url}}/tag/latinos/">Latinos</a></li>
-                </ul>
+                <h2>Secciones</h2>
+                {{navigation}}
             </section>
             <section>
                 <h2>El diario</h2>

@@ -268,3 +268,9 @@ node scripts/test_invite_permissions.cjs /ruta/Invites.js
 ```
 
 Verifican roles, cambio de permisos, cuentas inactivas, confirmación/expiración, suplantación, duplicados, recuperación tras publicación, HTML seguro, tipos de adjuntos y ambas variantes de invitación para los cuatro roles invitables. Nunca ejecutarlas enviando artículos ficticios para publicar en producción.
+
+## Navegación del tema (1.4.8)
+
+El menú principal y el menú móvil usan la **navegación primaria de Ghost** (`{{navigation}}`). Para añadir, quitar, ordenar o cambiar enlaces: Ajustes → Navigation → Primary navigation → Guardar. No hay que editar ni volver a desplegar el tema. Las etiquetas y URLs se renderizan con el helper nativo de Ghost, que conserva el enlace activo y el estilo existente. La navegación secundaria y el pie mantienen su configuración anterior.
+
+Un enlace no crea una página ni una sección en la portada: el destino debe existir. Las secciones editoriales de la portada se configuran aparte en `home.hbs`. Despliegue: `python3 scripts/upload_theme.py`, sin reiniciar Ghost ni cambiar artículos, miembros o configuraciones de Navigation.
