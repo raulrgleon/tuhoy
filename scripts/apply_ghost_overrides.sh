@@ -44,6 +44,9 @@ if ! grep -q 'TUHOY_EMAIL_ROLE_V1' "$invites"; then
     node --check < "$invites" || { cp "$invites.tuhoy-before-role" "$invites"; exit 1; }
     role_changed=1
 fi
+# El directorio externo bloquea iframes; abrir Explore en una pestaña nueva.
+python3 "$ROOT/scripts/patch_explore_link.py" "$ghost/core/built/admin/assets"
+
 SUBJECT="Te invitamos a unirte a {blogName}"
 if [ "$role_changed" = 1 ] || grep -q -e "has invited you to join {blogName}" -e "You have been invited to join {blogName}" "$invites"; then
     sed -i \
