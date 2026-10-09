@@ -274,3 +274,9 @@ Verifican roles, cambio de permisos, cuentas inactivas, confirmación/expiració
 El menú principal y el menú móvil usan la **navegación primaria de Ghost** (`{{navigation}}`). Para añadir, quitar, ordenar o cambiar enlaces: Ajustes → Navigation → Primary navigation → Guardar. No hay que editar ni volver a desplegar el tema. Las etiquetas y URLs se renderizan con el helper nativo de Ghost, que conserva el enlace activo y el estilo existente. La navegación secundaria y el pie mantienen su configuración anterior.
 
 Un enlace no crea una página ni una sección en la portada: el destino debe existir. Las secciones editoriales de la portada se configuran aparte en `home.hbs`. Despliegue: `python3 scripts/upload_theme.py`, sin reiniciar Ghost ni cambiar artículos, miembros o configuraciones de Navigation.
+
+## Secciones Venezuela y Cuba
+
+`/venezuela/` y `/cuba/` son canales paginados de Ghost, usando el diseño de sección y sus etiquetas públicas. No cambian las URLs de artículos ni los quitan de portada/Mundo. Para incluir una noticia, añade **Venezuela** o **Cuba** a sus etiquetas conservando la etiqueta principal; un artículo puede aparecer en ambas. Las etiquetas y metadatos se gestionan en Ghost. Publicar rutas: `python3 scripts/upload_routes.py` (respalda las rutas activas antes de subirlas).
+
+La incorporación inicial de noticias publicadas con referencia explícita al país en el título se registra con respaldo de etiquetas previas en `/data/tuhoy/backups/country-sections-20261009/`. No se publican borradores ni se modifican textos, autores o fechas de publicación. Las noticias futuras se incluyen al asignar su etiqueta; guardar un enlace en Navigation no crea una sección automáticamente.

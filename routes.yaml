@@ -1,4 +1,14 @@
 routes:
+  /venezuela/:
+    controller: channel
+    filter: tag:venezuela
+    template: tag
+    data: tag.venezuela
+  /cuba/:
+    controller: channel
+    filter: tag:cuba
+    template: tag
+    data: tag.cuba
   /news-sitemap.xml/:
     template: sitemap-news
     content_type: text/xml
