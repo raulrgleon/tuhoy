@@ -2,7 +2,7 @@
 
 Periódico digital en español en [tuhoy.com](https://tuhoy.com): noticias del mundo, inmigración y comunidad latina en EE. UU. Corre sobre **Ghost 5 + MySQL 8**, con un tema propio y una edición diaria automática que parte de fuentes reales.
 
-Las notas las firma y redacta **Raul Garcia**. Nunca se etiquetan como generadas por IA.
+La edición diaria automática la firma **Raul Garcia**. Los artículos enviados por el equipo conservan la autoría de su cuenta de Ghost.
 
 ## Índice
 
@@ -227,3 +227,44 @@ brand/               Logo, icono e imágenes del perfil de X
 data/                Estado y fixtures (lo sensible está en .gitignore)
 public/, Dockerfile, nginx.conf   Portada estática anterior; ya no es el origen de tuhoy.com
 ```
+
+
+## Artículos por correo y permisos del equipo
+
+`articulos@tuhoy.com` e `info@tuhoy.com` reenvían a la cuenta Gmail de Raul mediante Cloudflare Email Routing. No se requieren cuentas Google Workspace. `info@` sigue siendo contacto general; solo `articulos@` activa la recepción editorial.
+
+1. Invita en Ghost → Ajustes → Equipo, eligiendo el rol nativo. La invitación muestra el rol asignado y las instrucciones de correo.
+2. La persona acepta y activa su cuenta. Invitaciones pendientes, cuentas desactivadas, direcciones desconocidas y roles no reconocidos no pueden publicar.
+3. Desde el mismo correo de su cuenta, envía a `articulos@tuhoy.com`: título en asunto, texto en cuerpo. Hasta 5 imágenes JPG/PNG/WebP de 3 MB cada una y 10 MB por mensaje. No se admiten Word/PDF ni otros adjuntos. HTML se convierte a texto seguro; no se conservan estilos ni se descargan imágenes remotas. Usa correos nuevos, sin conversaciones anteriores ni firmas innecesarias.
+4. Recibe un código de confirmación para ese artículo. Envía un **nuevo** mensaje a `articulos@tuhoy.com` con asunto exacto `CONFIRMAR código`. Vence en 48 h. No publica solamente por reconocer el campo From: la confirmación demuestra acceso al buzón de la cuenta autorizada.
+5. Contributor/Colaborador: borrador privado y aviso a Raul; Author/Autor, Editor, Administrator y Owner: publicación web después de confirmar. No envía newsletters a suscriptores. Las respuestas informan del resultado. Los roles se vuelven a consultar antes de publicar; no se toman permisos del texto del correo ni de una configuración paralela.
+
+Servicio aislado Python estándar `scripts/email_articles.py`, ejecutado cada minuto por `deploy/tuhoy-email-articles.timer`. Lee Gmail mediante IMAP TLS en modo readonly y BODY.PEEK: no marca leído, mueve ni elimina correo. Envía confirmaciones usando Brevo desde `info@tuhoy.com`, Reply-To `articulos@`. No usa IA, no consume tokens y no reescribe el contenido. Los mensajes antiguos quedan fuera mediante una línea base de UID al activar el servicio.
+
+Estado privado SQLite: `data/mail-private/intake.sqlite`, directorio 700, umask 077. Guarda pendientes, outbox, UIDVALIDITY y deduplicación por remitente/Message-ID. Publicación recuperable por slug determinista: siempre crea borrador primero, reconcilia si hay un fallo y evita repetir publicaciones. Los pendientes expirados y artículos terminados eliminan sus cuerpos/adjuntos del estado. Los avisos pueden repetirse si se interrumpe el proceso exactamente después del envío SMTP y antes de guardar el acuse; los artículos no se vuelven a publicar. Una modificación del UIDVALIDITY bloquea el procesamiento hasta reconciliar manualmente. Errores de red se reintentan en el próximo ciclo; consultar `journalctl -u tuhoy-email-articles.service`.
+
+Instalación (configurar secretos antes, sin valores reales en este README):
+
+```sh
+sudo install -m 600 /ruta/configuracion-segura /etc/tuhoy-mail.env
+mkdir -p data/mail-private && chmod 700 data/mail-private
+sudo install -m 644 deploy/tuhoy-email-articles.* /etc/systemd/system/
+sudo systemctl daemon-reload
+# Inicializar una sola vez con las variables de /etc/tuhoy-mail.env:
+sudo systemd-run --wait --pipe --collect --uid=raul -p EnvironmentFile=/etc/tuhoy-mail.env -p UMask=0077 /usr/bin/python3 /home/raul/tuhoy/scripts/email_articles.py --initialize
+sudo systemctl enable --now tuhoy-email-articles.timer
+```
+
+Las credenciales de Gmail son independientes del estado de Ghost; rotar una contraseña requiere actualizar `/etc/tuhoy-mail.env`. El servicio se ejecuta como Raul, con filesystem readonly salvo su estado y límites de recursos. No exponer este archivo ni el SQLite en GitHub o en la web. Incluir ambos en respaldos **cifrados**: para SQLite usar su API de backup o `.backup` con sqlite3. No copiar una base abierta de forma insegura. Estos respaldos todavía dependen del procedimiento del servidor; no existe almacenamiento externo nuevo.
+
+Invitaciones: `scripts/patch_invite_permissions.py` añade únicamente información del rol al mail en Ghost 5; no modifica ACL. `apply_ghost_overrides.sh` aplica plantilla y parche tras un despliegue de Coolify, valida sintaxis, conserva el código previo y reinicia Ghost solo si falta el parche. Una versión incompatible aborta sin modificar el código. Desactivar recepción: `sudo systemctl disable --now tuhoy-email-articles.timer`; terminar una ejecución en curso solo después de revisar su estado. No elimina artículos, correos ni reglas de reenvío.
+
+Pruebas:
+
+```sh
+python3 -m unittest discover -s scripts -p test_email_articles.py -v
+# Sobre una copia del Invites.js parcheado, sin enviar invitaciones reales:
+node scripts/test_invite_permissions.cjs /ruta/Invites.js
+```
+
+Verifican roles, cambio de permisos, cuentas inactivas, confirmación/expiración, suplantación, duplicados, recuperación tras publicación, HTML seguro, tipos de adjuntos y ambas variantes de invitación para los cuatro roles invitables. Nunca ejecutarlas enviando artículos ficticios para publicar en producción.

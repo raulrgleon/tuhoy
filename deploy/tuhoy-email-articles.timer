@@ -1,0 +1,8 @@
+[Unit]
+Description=Revisa artículos de TuHoy cada minuto
+[Timer]
+OnBootSec=60
+OnUnitInactiveSec=60
+Persistent=true
+[Install]
+WantedBy=timers.target

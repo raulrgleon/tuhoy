@@ -1,0 +1,20 @@
+[Unit]
+Description=TuHoy artículos por correo con permisos de Ghost
+After=network-online.target
+Wants=network-online.target
+[Service]
+Type=oneshot
+User=raul
+Group=raul
+WorkingDirectory=/home/raul/tuhoy
+EnvironmentFile=/etc/tuhoy-mail.env
+ExecStart=/usr/bin/python3 /home/raul/tuhoy/scripts/email_articles.py
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/raul/tuhoy/data/mail-private
+TimeoutStartSec=180
+MemoryMax=192M
+CPUQuota=25%

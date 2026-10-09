@@ -38,8 +38,14 @@ done
 # El asunto de la invitación está en el código de Ghost y se carga al arrancar:
 # si hay que parchearlo, se reinicia Ghost (SIGTERM; Docker lo levanta con restart: unless-stopped).
 invites="$ghost/core/server/services/invites/Invites.js"
+role_changed=0
+if ! grep -q 'TUHOY_EMAIL_ROLE_V1' "$invites"; then
+    python3 "$ROOT/scripts/patch_invite_permissions.py" "$invites"
+    node --check < "$invites" || { cp "$invites.tuhoy-before-role" "$invites"; exit 1; }
+    role_changed=1
+fi
 SUBJECT="Te invitamos a unirte a {blogName}"
-if grep -q -e "has invited you to join {blogName}" -e "You have been invited to join {blogName}" "$invites"; then
+if [ "$role_changed" = 1 ] || grep -q -e "has invited you to join {blogName}" -e "You have been invited to join {blogName}" "$invites"; then
     sed -i \
         -e "s|'{invitedByName} has invited you to join {blogName}'|'$SUBJECT'|" \
         -e "s|'You have been invited to join {blogName}'|'$SUBJECT'|" \
