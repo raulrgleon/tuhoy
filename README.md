@@ -25,9 +25,10 @@ La edición diaria automática la firma **Raul Garcia**. Los artículos enviados
 ```
 Lectores ──► Cloudflare (DNS, HTTPS, túnel) ──► Traefik (Coolify) ──► Ghost 5 :2368 ──► MySQL 8
                                                                           ▲
-cron 06:00 America/Chicago ──► scripts/daily_edition.py ──► Admin API ────┘
+cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin API ────┘
                                      │
-                                     └─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
+                                     ├─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
+                                     └─► scripts/x_posts.py ──► un post en X por nota (@TuHoy_)
 
 Correo saliente:  Ghost ──► Brevo SMTP (info@tuhoy.com)
 Correo entrante:  info@tuhoy.com ──► Cloudflare Email Routing ──► raulrgleon@gmail.com
@@ -71,22 +72,38 @@ En Coolify, las variables del contenedor se editan en TuHoy Ghost → Environmen
 
 ## Edición diaria
 
-[`scripts/daily_edition.py`](scripts/daily_edition.py) corre cada día a las **06:00 America/Chicago**:
+[`scripts/daily_edition.py`](scripts/daily_edition.py) corre **tres veces al día: 06:00, 12:00 y 18:00 America/Chicago**, con unas 5 notas por edición (unas 15 al día):
 
-1. Lee RSS reales: BBC Mundo, France 24 y Google News (inmigración y latinos).
-2. Descarta duplicados por URL y título (estado en `data/edition_state.json`).
-3. Extrae el texto de la fuente; si no hay texto útil, descarta la pieza. **No inventa noticias.**
-4. Redacta la nota con `writer.py`. Sin clave de modelo, cae al resumen extractivo (etiqueta interna `#resumen-automatico`, no indexable hasta que se reescriba).
-5. Pone la foto de la fuente con su crédito, etiquetas, extracto y meta SEO.
-6. Publica en Ghost. Las piezas dudosas se publican igual con la etiqueta interna `#revisar` y se anotan en `data/review_queue.jsonl`.
+| Ranura | Notas | Fuentes |
+| --- | --- | --- |
+| Inmigración (`--inmig`, 2) | La primera va **destacada** (noticia principal de la portada) | La Opinión, El Diario NY, y las notas de inmigración de Univision, Telemundo y CNN en Español |
+| General (`--general`, 2) | Mundo, política, economía, salud… | BBC Mundo, France 24, CNN en Español, Univision, Telemundo |
+| Países (`--paises`, 1) | Llevan siempre la etiqueta **Venezuela** o **Cuba** (canales `/venezuela/` y `/cuba/`) | El Pitazo, Tal Cual, El Nacional (Venezuela); 14ymedio, CiberCuba (Cuba) |
 
-Instalar o reinstalar el cron (incluye los posts de X):
+Cómo trabaja cada edición:
+
+1. Lee las fuentes: RSS o, para CNN en Español, Univision y Telemundo, su sitemap de Google News. El orden de las fuentes se sortea en cada edición y se intercalan, para que ninguna acapare la portada.
+2. Descarta vídeos, directos, espectáculos y deportes, y las piezas de **más de 48 horas** (`MAX_AGE_HOURS`).
+3. Descarta duplicados por URL, por título y por parecido con notas ya publicadas (estado en `data/edition_state.json`).
+4. Extrae el texto de la fuente (quitando el menú que algunas páginas ponen antes del titular); si no hay texto útil o trae restos de código de la página, descarta la pieza. En la ranura de países exige poder leer el artículo completo. **No inventa noticias.**
+5. Redacta la nota con `writer.py`. Sin clave de modelo, cae al resumen extractivo (etiqueta interna `#resumen-automatico`, no indexable hasta que se reescriba).
+6. Pone la foto de la fuente con su crédito, etiquetas (sección + Venezuela/Cuba si el titular o la entradilla los nombran), extracto y meta SEO.
+7. Publica en Ghost. Las piezas dudosas se publican igual con la etiqueta interna `#revisar` y se anotan en `data/review_queue.jsonl`.
+
+Fuentes descartadas: **EFE** y **AP** bloquean la lectura automática (403); **Voz de América** no publica desde marzo de 2025; Cubanet y Diario de Cuba no dejan leer el texto. Google News no sirve porque cifra los enlaces.
+
+```bash
+python3 scripts/daily_edition.py --dry-run            # muestra qué publicaría, sin redactar ni publicar
+python3 scripts/daily_edition.py --inmig 2 --general 2 --paises 1   # una edición a mano
+```
+
+Instalar o reinstalar el cron (edición + posts de X + plantillas de Ghost):
 
 ```bash
 bash scripts/install_daily_cron.sh
 ```
 
-El servidor está en UTC; el cron se lanza a las 11:00 y 12:00 UTC y solo sigue la que coincide con las 06 locales (cubre horario de verano e invierno).
+El servidor está en UTC: el cron se lanza cada hora en punto y solo sigue si en Chicago son las 06, 12 o 18 (cubre horario de verano e invierno). Justo después de cada edición corre `x_posts.py`.
 
 Logs: `logs/daily.log` (actividad) y `logs/daily-errors.log` (errores).
 
@@ -109,24 +126,25 @@ python3 scripts/eval_writer.py           # compara y escribe data/eval_report.md
 
 ## Posts diarios en X (@tuhoy_)
 
-[`scripts/x_posts.py`](scripts/x_posts.py) corre cada día a las **07:00 America/Chicago**, después de la edición:
+[`scripts/x_posts.py`](scripts/x_posts.py) corre **justo después de cada edición** (06:00, 12:00 y 18:00 America/Chicago): **cada nota nueva sale con su post**.
 
-1. Toma las notas publicadas en las últimas 30 horas, sin `#revisar` ni `#resumen-automatico`, y sin repetir las ya usadas (historial en `data/x_queue.json`).
-2. El modelo elige las **`X_POSTS` más importantes** (hoy 14) (prioridad: inmigración y latinos en EE. UU., luego política de EE. UU., luego internacional) y escribe un post por cada una con [`prompts/tweets.md`](prompts/tweets.md).
-3. Asigna una hora a cada post: con 14, uno por hora de 7:00 a 20:00 (con 7: 7, 9, 11, 13, 15, 18 y 21 h; o lo que diga `X_HOURS`).
-4. Lo entrega según `X_MODE`:
-   - `email` (por defecto, gratis): manda un correo a `X_EMAIL_TO` con los 7 posts y un botón **Publicar en X** que abre X con el texto y el enlace listos. También se pueden programar en X a la hora sugerida.
+1. Toma las notas publicadas en las últimas 30 horas que aún no tienen post (historial en `data/x_queue.json`), sin `#revisar` ni `#resumen-automatico`. Entran también las que sube el equipo a mano o por correo.
+2. Escribe un post por nota con [`prompts/tweets.md`](prompts/tweets.md), ordenados de más a menos importante (máximo `X_POSTS` por tanda; hoy 14).
+3. Los reparte cada `X_SPACING` minutos (60) desde unos minutos después de la edición hasta la siguiente (la última tanda, hasta las 23:00). Si hay más notas que huecos, los junta (mínimo 20 minutos). Los posts pendientes de tandas anteriores se conservan y los nuevos van detrás.
+4. `X_LINKS=2` es un cupo **por día**: los 2 primeros posts del día llevan enlace (cuestan $0.20); el resto, no.
+5. Lo entrega según `X_MODE`:
+   - `email` (gratis): manda un correo a `X_EMAIL_TO` con los posts y un botón **Publicar en X** que abre X con el texto y el enlace listos.
    - `api`: los publica solos en @tuhoy_. Un cron cada 15 minutos (`--post-due`) publica los que ya tocan.
 
 La API de X es de pago por uso desde 2026 (unos $0.015 por post sin enlace y $0.20 con enlace). Para activar el modo `api`: comprar créditos en [console.x.com](https://console.x.com) con la cuenta @tuhoy_, crear una app con permisos de lectura y escritura, poner las cuatro claves `X_*` en `.env` y cambiar `X_MODE=api`. `X_LINKS` decide cuántos posts llevan enlace (los más importantes primero).
 
 **Estado actual:** `X_MODE=api`, publicando solo en @TuHoy_ con la app `TuHoy_` (id 33505696) de console.x.com. Si un post lleva más de 2 horas de retraso (por ejemplo, el servidor estuvo apagado) se marca como vencido y no se publica, para no soltar varios de golpe.
 
-**Estrategia (presupuesto $20/mes):** 14 posts al día, los 2 más importantes con enlace (`X_POSTS=14`, `X_LINKS=2`): unos $0.58 al día, ~$17.40 al mes.
+**Estrategia (presupuesto $20/mes):** un post por nota (unos 15 al día con las tres ediciones), 2 al día con enlace (`X_LINKS=2`): unos $0.60 al día, ~$18 al mes. Si se queda corto, bajar `X_POSTS` o pasar a `X_LINKS=1`.
 
 ```bash
-python3 scripts/x_posts.py --dry-run   # muestra los 7 posts sin enviarlos
-python3 scripts/x_posts.py             # elige, escribe y envía (o encola)
+python3 scripts/x_posts.py --dry-run   # muestra los posts de las notas nuevas, sin tocar la cola
+python3 scripts/x_posts.py             # los escribe y los envía (o encola)
 ```
 
 Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
@@ -137,7 +155,7 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 
 | Script | Qué hace |
 | --- | --- |
-| [`daily_edition.py`](scripts/daily_edition.py) | Edición diaria (ver arriba) |
+| [`daily_edition.py`](scripts/daily_edition.py) | Una edición (cron 6, 12 y 18 h; ver arriba) |
 | [`writer.py`](scripts/writer.py) | Cliente del modelo y las tres pasadas de redacción |
 | [`eval_writer.py`](scripts/eval_writer.py) | Compara redacción extractiva vs. modelo |
 | [`rewrite_published.py`](scripts/rewrite_published.py) | Reescribe notas ya publicadas desde su fuente; conserva URL, fecha e imagen y guarda copia (`--restore` para deshacer) |
@@ -148,7 +166,7 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 | [`upload_theme.py`](scripts/upload_theme.py) | Empaqueta, sube y activa el tema `themes/tuhoy` |
 | [`upload_routes.py`](scripts/upload_routes.py) | Sube `routes.yaml` a Ghost con copia previa de las rutas activas |
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
-| [`x_posts.py`](scripts/x_posts.py) | Elige las 7 notas del día y escribe/envía los posts de X |
+| [`x_posts.py`](scripts/x_posts.py) | Escribe y programa un post de X por cada nota nueva tras cada edición |
 | [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost y traduce el asunto de la invitación |
 | [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, de los posts de X y de las plantillas de correo |
 

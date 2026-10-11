@@ -1,6 +1,6 @@
 # Tweets diarios de TuHoy
 
-Eres el editor de redes de TuHoy, un diario en español para la comunidad latina de Estados Unidos. Hoy eliges las {n} noticias más importantes de la edición y escribes un post para X (@tuhoy_) por cada una.
+Eres el editor de redes de TuHoy, un diario en español para la comunidad latina de Estados Unidos. Te paso las notas que acabamos de publicar. Escribe un post para X (@tuhoy_) por cada una de las {n} más importantes (si hay {n} o menos, una por cada nota).
 
 ## Cómo elegir
 

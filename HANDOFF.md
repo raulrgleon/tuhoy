@@ -1,27 +1,34 @@
 # HANDOFF — TuHoy — periódico digital
 
-> **Checkpoint inicial de configuración.** No hay aquí una entrega real de una sesión de programación; `AGENTS.md` establece cómo actualizar este documento cuando comience trabajo autorizado.
+## Último checkpoint
+- **Fecha / agente:** 2026-10-11 (UTC) · Cursor (Claude), en el Dell `/home/raul/tuhoy`.
+- **Objetivo pedido por Raul:** tres ediciones al día (6, 12 y 18 h Chicago, ~5 notas cada una), más fuentes en
+  español (Univision, Telemundo, CNN en Español, EFE, AP, Voz de América) y de Venezuela y Cuba, mismas reglas
+  (nada inventado, sin repetidas, `#revisar` para lo dudoso) y un post de X por cada nota. "No rompas nada."
+- **Rama:** `main`.
 
-## Repositorio y contexto
-- GitHub: `raulrgleon/tuhoy`. Rama predeterminada observada durante configuración: `main`.
-- Contexto: Sitio/publicador Ghost 5 + MySQL 8 según documentación del repositorio; comprobar scripts y entorno antes de activar publicaciones o cambios de datos.
-- Memoria global: leer solo si el entorno posee autorización; comprobar contra el código actual.
+## Qué se hizo
+- `scripts/daily_edition.py`: ranuras por edición `--inmig 2 --general 2 --paises 1`; fuentes por RSS o sitemap de
+  Google News (CNN en Español, Univision, Telemundo); filtro de antigüedad 48 h; fuera vídeos/directos/espectáculos;
+  orden de fuentes sorteado e intercalado; menú de la página recortado antes del titular; descarta textos con restos
+  de código HTML; ranura de países con etiqueta Venezuela/Cuba según la fuente; `--dry-run` sin redactar ni publicar.
+- `scripts/x_posts.py`: corre tras cada edición, un post por nota nueva, reparto hasta la siguiente edición, conserva
+  pendientes (antes se sobrescribían), cupo de enlaces `X_LINKS` por día.
+- `scripts/install_daily_cron.sh`: cron cada hora con filtro 06|12|18 de Chicago → edición y luego `x_posts.py`.
+  Eliminada la tanda fija de las 07:00. Cron instalado.
+- `prompts/tweets.md`, `README.md`, `.env.example` (`X_SPACING`; fuera `X_HOURS`).
 
-## Situación comprobada
-- Se incorporaron las reglas de continuidad y este checkpoint.
-- **No se ejecutaron pruebas, compilaciones ni verificaciones de despliegue como parte de este cambio.**
-- **No se modificó código de producto**; solo documentación de agentes.
-- Antes de cualquier trabajo, comprobar rama, SHA, `git status`, pruebas pertinentes y permisos.
+## Pruebas reales
+- `daily_edition.py --dry-run` ejecutado varias veces: 5 notas por edición, etiquetas correctas, sin publicar.
+- Planificación de `x_posts.schedule` probada con horas simuladas; `x_posts.py --dry-run` redactó un post real sin
+  tocar `data/x_queue.json` (comprobado con `cmp`).
+- Filtro horario del cron simulado con `sh` para 06/07/12/18/23.
+- **La primera edición real con el código nuevo será la de las 06:00 de Chicago del 2026-10-11.**
 
-## Primera transferencia real — plantilla para completar
-- **Fecha / agente:** sin registrar.
-- **Objetivo solicitado:** a definir por el usuario.
-- **Rama / commit de origen:** comprobar en sesión.
-- **Qué se terminó / archivos:** sin tarea funcional iniciada con este protocolo.
-- **Cambios locales o sin commit:** comprobar antes de editar.
-- **Pruebas realizadas y resultados:** no ejecutadas en esta configuración.
-- **Decisiones y riesgos:** verificar estado del proyecto; no inferir producción.
-- **Qué debe hacer el siguiente agente:** inspeccionar código y recibir tarea del usuario.
+## Descartado
+- EFE y AP: 403 a cualquier lectura automática. Voz de América: sin publicaciones desde marzo de 2025.
+  Cubanet y Diario de Cuba: no dejan leer el texto. Google News: enlaces cifrados.
 
-## Pautas
-Usar `AGENTS.md` como contrato de traspaso. No descartar cambios locales ajenos ni publicar código o memoria sin aprobación.
+## Siguiente paso
+- Revisar `logs/daily.log` tras las ediciones del 2026-10-11 (6, 12 y 18 h) y las líneas `[x]` de los posts.
+- Vigilar el gasto de X (~15 posts/día, 2 con enlace ≈ $18/mes).

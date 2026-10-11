@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Elige las noticias más importantes del día (X_POSTS, 7 por defecto), escribe un post para X por cada una y lo entrega.
+"""Escribe un post para X por cada nota nueva (una vez publicada la edición) y lo entrega.
+
+El cron lo lanza justo después de cada edición (6, 12 y 18 h de Chicago). Toma las notas publicadas
+que aún no tienen post (sin #revisar ni #resumen-automatico; máximo X_POSTS por tanda) y reparte los
+posts cada X_SPACING minutos hasta la edición siguiente. Los posts pendientes de tandas anteriores se conservan.
 
 Modos (X_MODE en .env):
   email (por defecto)  manda los posts por correo con un botón que abre X con el texto listo.
-  api                  los publica en @tuhoy_ a lo largo del día con la API de X (requiere créditos
+  api                  los publica en @tuhoy_ con la API de X (requiere créditos
                        y X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET).
 
-  python3 scripts/x_posts.py              # elige y escribe los posts de hoy (y los manda o los encola)
+  python3 scripts/x_posts.py              # escribe los posts de las notas nuevas (y los manda o los encola)
   python3 scripts/x_posts.py --dry-run    # solo los muestra
   python3 scripts/x_posts.py --post-due   # modo api: publica los que ya tocan (cron cada 15 min)
 """
@@ -39,7 +43,8 @@ spec.loader.exec_module(daily)
 
 TZ = ZoneInfo("America/Chicago")
 QUEUE = ROOT / "data" / "x_queue.json"
-HOURS = [7, 9, 11, 13, 15, 18, 21]
+EDITION_HOURS = [6, 12, 18]
+LAST_POST_HOUR = 23  # no se programan posts más tarde
 SKIP_TAGS = {daily.AUTO_TAG, daily.REVIEW_TAG}
 URL_LEN = 23  # X cuenta cualquier enlace como 23 caracteres
 MAX_LEN = 280
@@ -102,17 +107,25 @@ def compose(posts: list[dict], n: int) -> list[dict]:
     return out
 
 
-def hours_for(env: dict, n: int) -> list[int]:
-    """X_HOURS (lista separada por comas) o, por defecto, 7 horas fijas; con más posts, uno por hora desde las 7."""
-    if env.get("X_HOURS"):
-        return [int(h) for h in env["X_HOURS"].split(",")]
-    return HOURS if n <= len(HOURS) else list(range(7, 7 + n))
-
-
-def schedule(tweets: list[dict], hours: list[int]) -> None:
-    today = datetime.now(TZ).date()
-    for t, hour in zip(tweets, hours):
-        t["hora"] = datetime(today.year, today.month, today.day, hour, tzinfo=TZ).isoformat()
+def schedule(tweets: list[dict], env: dict, pending: list[dict], now: datetime | None = None) -> None:
+    """Reparte los posts desde ahora hasta la próxima edición, detrás de los que ya están en cola."""
+    now = now or datetime.now(TZ)
+    spacing = int(env.get("X_SPACING") or 60)
+    start = now + timedelta(minutes=10)
+    start = start.replace(second=0, microsecond=0) + timedelta(minutes=(-start.minute) % 15)
+    queued = [datetime.fromisoformat(t["hora"]) for t in pending]
+    if queued and max(queued) + timedelta(minutes=spacing) > start:
+        start = max(queued) + timedelta(minutes=spacing)
+    next_ed = next(
+        (now.replace(hour=h, minute=0, second=0, microsecond=0) for h in EDITION_HOURS if h > now.hour),
+        now.replace(hour=LAST_POST_HOUR, minute=0, second=0, microsecond=0),
+    )
+    window = (next_ed - start).total_seconds() / 60
+    if tweets and window > 0:
+        spacing = max(20, min(spacing, int(window // len(tweets))))
+    end_of_day = now.replace(hour=LAST_POST_HOUR, minute=0, second=0, microsecond=0)
+    for i, t in enumerate(tweets):
+        t["hora"] = min(start + timedelta(minutes=spacing * i), end_of_day).isoformat()
 
 
 def full_text(t: dict, with_link: bool = True) -> str:
@@ -201,6 +214,20 @@ def links_for(env: dict, index: int) -> bool:
     return index < int(mode)
 
 
+def assign_links(env: dict, tweets: list[dict], queue: dict) -> None:
+    """Con X_LINKS numérico, el cupo es por día (cada enlace cuesta $0.20): se reparte entre tandas."""
+    mode = (env.get("X_LINKS") or "all").lower()
+    if mode in ("all", "none"):
+        for t in tweets:
+            t["link"] = mode == "all"
+        return
+    today = datetime.now(TZ).date().isoformat()
+    used = sum(1 for t in queue.get("historial", []) if t.get("link") and t.get("fecha") == today)
+    left = max(0, int(mode) - used)
+    for i, t in enumerate(tweets):
+        t["link"] = i < left
+
+
 def post_due(env: dict) -> None:
     if not QUEUE.exists():
         return
@@ -214,7 +241,7 @@ def post_due(env: dict) -> None:
             log(f"vencido, no se publica: {t['titulo']}")
             continue
         try:
-            t["tweet_id"] = post_tweet(env, full_text(t, links_for(env, i)))
+            t["tweet_id"] = post_tweet(env, full_text(t, t["link"] if "link" in t else links_for(env, i)))
             log(f"publicado {t['tweet_id']}: {t['titulo']}")
         except RuntimeError as e:
             log(f"error al publicar {t['titulo']}: {e}")
@@ -232,7 +259,7 @@ def main() -> int:
     args = ap.parse_args()
 
     env = writer.load_env()
-    args.n = args.n or int(env.get("X_POSTS") or 7)
+    args.n = args.n or int(env.get("X_POSTS") or 8)
     mode = (env.get("X_MODE") or "email").lower()
     if args.post_due:
         if mode == "api":
@@ -242,24 +269,41 @@ def main() -> int:
     ghost = daily.Ghost(env["GHOST_URL"], env["GHOST_ADMIN_API_KEY"])
     seen = already_tweeted()
     posts = [p for p in recent_posts(ghost) if p["id"] not in seen]
-    if len(posts) < args.n:
-        log(f"solo {len(posts)} notas nuevas; se usan todas")
     if not posts:
         log("sin notas nuevas")
         return 0
+    if len(posts) > args.n:
+        log(f"{len(posts)} notas nuevas; se escriben las {args.n} más importantes")
     tweets = compose(posts, min(args.n, len(posts)))
-    schedule(tweets, hours_for(env, args.n))
+    if not tweets:
+        log("el modelo no devolvió posts válidos")
+        return 1
+
+    queue = json.loads(QUEUE.read_text(encoding="utf-8")) if QUEUE.exists() else {}
+    now = datetime.now(TZ)
+    # Se conservan los pendientes aún por publicar; los publicados o vencidos de hace más de un día se limpian.
+    pending = [
+        t
+        for t in queue.get("pendientes", [])
+        if not t.get("tweet_id") and not t.get("vencido")
+        or now - datetime.fromisoformat(t["hora"]) < timedelta(days=1)
+    ]
+    waiting = [t for t in pending if not t.get("tweet_id") and not t.get("vencido")]
+    schedule(tweets, env, waiting, now)
+    assign_links(env, tweets, queue)
 
     if args.dry_run:
         for t in tweets:
-            print(f"[{datetime.fromisoformat(t['hora']).strftime('%H:%M')}] ({len(t['texto'])}) {t['texto']}\n    {t['url']}\n")
+            link = "con enlace" if t["link"] else "sin enlace"
+            print(f"[{datetime.fromisoformat(t['hora']).strftime('%H:%M')}] ({len(t['texto'])}, {link}) {t['texto']}\n    {t['url']}\n")
         return 0
 
-    queue = json.loads(QUEUE.read_text(encoding="utf-8")) if QUEUE.exists() else {}
-    historial = (queue.get("historial", []) + [{"id": t["id"], "fecha": t["hora"][:10]} for t in tweets])[-500:]
+    historial = (
+        queue.get("historial", []) + [{"id": t["id"], "fecha": t["hora"][:10], "link": t["link"]} for t in tweets]
+    )[-500:]
     QUEUE.parent.mkdir(parents=True, exist_ok=True)
     QUEUE.write_text(
-        json.dumps({"pendientes": tweets, "historial": historial}, ensure_ascii=False, indent=2) + "\n",
+        json.dumps({"pendientes": pending + tweets, "historial": historial}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     if mode == "api":

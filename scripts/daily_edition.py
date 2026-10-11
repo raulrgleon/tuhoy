@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Edición diaria de TuHoy: fuentes reales -> artículos originales en español -> Ghost.
 
-Corre solo (cron 06:00 America/Chicago). Con clave de modelo (ver writer.py) redacta
+Corre solo tres veces al día (cron 06:00, 12:00 y 18:00 America/Chicago, ~5 notas cada vez). Con clave de modelo (ver writer.py) redacta
 notas originales en dos pasadas; sin clave, cae al resumen extractivo. No inventa noticias: si no hay texto
 útil en la fuente, descarta la pieza. Deduplica por URL y por título.
 """
@@ -41,15 +41,45 @@ BROWSER = (
 )
 CTX = ssl.create_default_context()
 
+# Fuentes: RSS o sitemaps de Google News (las URL con "sitemap"). collect() las intercala.
+# Google News cifra sus enlaces y no deja llegar al artículo: solo fuentes con URL directa.
+# EFE y AP bloquean la lectura automática (403) y Voz de América no publica desde marzo de 2025.
+SITEMAP_CNN = "https://cnnespanol.cnn.com/sitemap/news.xml"
+SITEMAP_UNIVISION = "https://www.univision.com/feed-sitemap/google-news/noticias"
+SITEMAP_TELEMUNDO = "https://www.telemundo.com/sitemap/telemundo/sitemap-news"
 FEEDS_GENERAL = [
     "https://feeds.bbci.co.uk/mundo/rss.xml",
     "https://www.france24.com/es/rss",
+    SITEMAP_CNN,
+    SITEMAP_UNIVISION,
+    SITEMAP_TELEMUNDO,
 ]
-# Google News cifra sus enlaces y no deja llegar al artículo: solo feeds con URL directa.
 FEEDS_INMIGRACION = [
     "https://www.laopinion.com/categoria/inmigracion/feed/",
     "https://www.eldiariony.com/categoria/inmigracion/feed/",
+    SITEMAP_UNIVISION,
+    SITEMAP_TELEMUNDO,
+    SITEMAP_CNN,
 ]
+# Una ranura por edición para las secciones /venezuela/ y /cuba/.
+FEEDS_PAISES = {
+    "https://elpitazo.net/feed/": "Venezuela",
+    "https://talcualdigital.com/feed/": "Venezuela",
+    "https://www.elnacional.com/feed/": "Venezuela",
+    "https://www.14ymedio.com/rss/": "Cuba",
+    "https://www.cibercuba.com/rss.xml": "Cuba",
+}
+# Vídeos, directos, espectáculos y deportes no dan nota escrita útil.
+SKIP_URL = re.compile(
+    r"/(video|videos|shorts|live-news|famosos|horoscopos|shows|trending|deportes|entretenimiento|gallery)/",
+    re.I,
+)
+MAX_AGE_HOURS = 48
+COUNTRY_TAGS = [
+    ("Venezuela", re.compile(r"\b(venezuela|venezolan[oa]s?|maduro|caracas|chavismo|chavista)\b", re.I)),
+    ("Cuba", re.compile(r"\b(cuba|cuban[oa]s?|la habana|díaz-canel|diaz-canel)\b", re.I)),
+]
+DRY_RUN = False
 
 # Páginas que suelen dar texto completo (la edición las reescribe; no se copian).
 PAGINAS_INMIGRACION = [
@@ -335,6 +365,56 @@ def parse_rss(url: str) -> list[dict]:
     return items
 
 
+def parse_news_sitemap(url: str) -> list[dict]:
+    """Sitemap de Google News: <loc>, <news:title> y <news:publication_date> por noticia."""
+    try:
+        raw = http_get(url).decode("utf-8", "replace")
+    except Exception as e:
+        log(f"sitemap fail {url} {e}")
+        return []
+    source = urllib.parse.urlparse(url).netloc.replace("www.", "")
+    items = []
+    for block in re.findall(r"<url>(.*?)</url>", raw, re.S):
+        def field(tag: str) -> str:
+            m = re.search(rf"<{tag}>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</{tag}>", block, re.S)
+            return html.unescape(m.group(1).strip()) if m else ""
+
+        title, link = field("news:title"), field("loc")
+        if title and link:
+            items.append({"title": title, "url": link, "desc": "", "pub": field("news:publication_date"), "source": source})
+    return items
+
+
+def item_age_hours(item: dict) -> float | None:
+    pub = (item.get("pub") or "").strip()
+    if not pub:
+        return None
+    try:
+        when = parsedate_to_datetime(pub)
+    except (TypeError, ValueError):
+        try:
+            when = datetime.fromisoformat(pub.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - when).total_seconds() / 3600
+
+
+def source_items(url: str) -> list[dict]:
+    """Noticias recientes de una fuente, sin vídeos/directos ni piezas de más de MAX_AGE_HOURS."""
+    items = parse_news_sitemap(url) if "sitemap" in url else parse_rss(url)
+    out = []
+    for item in items:
+        if SKIP_URL.search(item["url"]):
+            continue
+        age = item_age_hours(item)
+        if age is not None and age > MAX_AGE_HOURS:
+            continue
+        out.append(item)
+    return out
+
+
 def gdelt_url(title: str) -> str:
     words = " ".join(re.findall(r"[A-Za-zÁÉÍÓÚáéíóúÜüÑñ0-9]{3,}", title)[:8])
     if not words:
@@ -512,6 +592,18 @@ def extract_article(url: str, limit: int = 1800) -> str:
         if sum(len(x) for x in cut) > limit:
             break
     return " ".join(cut)
+
+
+def trim_to_headline(text: str, *titles: str) -> str:
+    """Quita el menú que algunas páginas (Univision, Telemundo) dejan antes del titular."""
+    for title in titles:
+        head = re.sub(r"\s+", " ", title or "").strip()[:40]
+        if len(head) < 20:
+            continue
+        pos = text.find(head)
+        if 0 < pos < 1500:
+            return text[pos:]
+    return text
 
 
 def norm_title(title: str) -> str:
@@ -763,11 +855,18 @@ def update_navigation(ghost: Ghost) -> None:
     log(f"nav update {code} {resp.get('errors') or 'ok'}")
 
 
-def collect(force_inmig: bool, limit: int) -> list[dict]:
-    urls = FEEDS_INMIGRACION if force_inmig else FEEDS_GENERAL
-    bag = []
+def collect(force_inmig: bool, limit: int, feeds: list[str] | None = None) -> list[dict]:
+    urls = list(feeds or (FEEDS_INMIGRACION if force_inmig else FEEDS_GENERAL))
+    # Orden de fuentes al azar en cada edición e intercalado (1.ª de cada una, luego 2.ª...),
+    # para que ninguna acapare la portada.
+    random.shuffle(urls)
+    lists = []
     for feed in urls:
-        bag.extend(parse_rss(feed))
+        items = source_items(feed)
+        for item in items:
+            item["country"] = FEEDS_PAISES.get(feed, "")
+        lists.append(items)
+    bag = [lst[i] for i in range(max((len(lst) for lst in lists), default=0)) for lst in lists if i < len(lst)]
     out = []
     seen = set()
     for item in bag:
@@ -796,15 +895,28 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
         return False
 
     article_url = resolve_article_url(item["url"], title)
-    text = (item.get("desc") or "") + " " + extract_article(article_url)
+    body_text = trim_to_headline(extract_article(article_url), item["title"], title)
+    text = (item.get("desc") or "") + " " + body_text
     text = re.sub(r"\s+", " ", text).strip()
     if len(text) < 280:
         log(f"skip short: {title}")
         return False
+    if len(re.findall(r"\bdata-[a-z-]+=", body_text)) >= 3:
+        log(f"skip texto con código de la página: {title}")
+        return False
+    if item.get("require_body") and len(body_text) < 600:
+        log(f"skip sin artículo legible: {title}")
+        return False
+    if DRY_RUN:
+        tags = classify(title, text, force_inmig)
+        tags += [name for name, rx in COUNTRY_TAGS if rx.search(f"{title} {text[:300]}") or item.get("country") == name]
+        log(f"[prueba] publicaría ({', '.join(tags)}){' ★' if featured else ''}: {title} <- {article_url}")
+        known.append(title)
+        return True
     source_title = title
     written = None
     if writer.enabled():
-        full = (item.get("desc") or "") + " " + extract_article(article_url, limit=9000)
+        full = (item.get("desc") or "") + " " + trim_to_headline(extract_article(article_url, limit=9000), item["title"], title)
         sources = [
             {
                 "name": item.get("source") or urllib.parse.urlparse(article_url).netloc.replace("www.", ""),
@@ -831,6 +943,12 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
 
     tags = classify(source_title, text, force_inmig)
     slug_tag = primary_slug(tags)
+    # País solo por titular y entradilla: el cuerpo de las páginas trae menús y recomendados.
+    tags += [
+        name
+        for name, rx in COUNTRY_TAGS
+        if (item.get("country") == name or rx.search(f"{source_title} {title} {excerpt}")) and name not in tags
+    ]
     img_url = None
     caption = ""
     picked = source_photo(article_url)
@@ -892,12 +1010,13 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
     return True
 
 
-def run(max_general: int = 5, max_inmig: int = 4) -> int:
+def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
     env = load_env()
     ghost = Ghost(env["GHOST_URL"], env["GHOST_ADMIN_API_KEY"])
     state = load_state()
-    ensure_tags(ghost)
-    update_navigation(ghost)
+    if not DRY_RUN:
+        ensure_tags(ghost)
+        update_navigation(ghost)
     known = existing_titles(ghost)
     published = 0
 
@@ -937,6 +1056,18 @@ def run(max_general: int = 5, max_inmig: int = 4) -> int:
             general_ok += 1
             published += 1
 
+    paises_ok = 0
+    for item in collect(False, 15, feeds=list(FEEDS_PAISES)):
+        if paises_ok >= max_paises:
+            break
+        item["require_body"] = True
+        if publish_item(ghost, item, bool(INMIG_RE.search(item["title"])), featured=False, known=known, state=state):
+            paises_ok += 1
+            published += 1
+
+    if DRY_RUN:
+        log(f"[prueba] fin: {published} notas (no se publicó nada)")
+        return 0
     state["runs"].append(
         {
             "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -953,13 +1084,24 @@ def run(max_general: int = 5, max_inmig: int = 4) -> int:
 
 
 def main() -> int:
+    global DRY_RUN
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Una edición de TuHoy (el cron la lanza a las 6, 12 y 18 h de Chicago).")
+    ap.add_argument("--inmig", type=int, default=2, help="notas de inmigración (la primera va destacada)")
+    ap.add_argument("--general", type=int, default=2, help="notas generales")
+    ap.add_argument("--paises", type=int, default=1, help="notas de Venezuela/Cuba")
+    ap.add_argument("--dry-run", action="store_true", help="muestra qué publicaría, sin redactar ni publicar")
+    args = ap.parse_args()
+    DRY_RUN = args.dry_run
+
     lock = Path("/tmp/tuhoy-daily.lock")
     if lock.exists() and time.time() - lock.stat().st_mtime < 3600:
         log("lock held, exit")
         return 0
     lock.write_text(str(os.getpid()), encoding="utf-8")
     try:
-        return run()
+        return run(max_general=args.general, max_inmig=args.inmig, max_paises=args.paises)
     finally:
         try:
             lock.unlink()
