@@ -6,7 +6,7 @@ con enlace: sube la foto de la nota y pone el texto + la URL en el pie. Lo publi
 apunta en data/ig_queue.json.
 
 Sin sobresaltos: solo posts cuya hora pasó hace menos de 2 horas, como mucho uno por pasada
-(el cron corre cada 15 min) y nada si IG_MODE no es api. No se activa hasta que Raul lo pida.
+(el cron corre cada 15 min) y nada si IG_MODE no es api.
 
 Variables en .env: IG_MODE (api | off), FB_PAGE_ID, FB_PAGE_TOKEN (el de la página TuHoy,
 con la cuenta de Instagram profesional ligada). IG_USER_ID es opcional: si falta se lee de

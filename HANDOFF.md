@@ -1,9 +1,10 @@
 ## Checkpoint Instagram @tuhoynoticias (2026-10-13 · Cursor)
 - Cuenta nueva profesional (Business), usuario **@tuhoynoticias**, nombre TuHoy, correo info@tuhoy.com, teléfono 4028240388, categoría News & media website, bio «Las noticias que importan, en español.» + tuhoy.com. No se usó @raul_garcia_us ni @rgcar.run. Sin publicaciones ni invitaciones.
 - Enlace público en el tema 1.5.1 (pie y final de cada nota) y en el boletín. El sitio web del perfil de Instagram solo se edita desde la app.
-- `scripts/instagram_posts.py`: mismos posts que X (foto de Ghost + pie con URL). `IG_MODE=off` en `.env` hasta que Raul lo pida. Cron cada 15 min. `data/ig_queue.json` en gitignore.
-- Raul ligó @tuhoynoticias a la página Facebook TuHoy. Graph confirma `instagram_business_account` id **17841472487834968** / username tuhoynoticias. App TuHoy Publicador: caso de uso «Administrar mensajes y contenido en Instagram». Token de página renovado (sin caducidad) con `instagram_basic` + `instagram_content_publish` además de los de Facebook, autorizado solo a página TuHoy, BM TuHoy y cuenta tuhoynoticias. `IG_MODE` sigue en `off`.
-- Foto de perfil de Instagram: el navegador no puede subir archivos; Raul puede ponerla desde el móvil. No publicar en Instagram hasta que Raul pida `IG_MODE=api`.
+- `scripts/instagram_posts.py`: mismos posts que X (foto de Ghost + pie con URL). **`IG_MODE=api`** (Raul lo pidió el 13-oct ~14:28 Chicago). Cron cada 15 min. `data/ig_queue.json` en gitignore.
+- Raul ligó @tuhoynoticias a la página Facebook TuHoy. Graph confirma `instagram_business_account` id **17841472487834968** / username tuhoynoticias. App TuHoy Publicador: caso de uso «Administrar mensajes y contenido en Instagram». Token de página renovado (sin caducidad) con `instagram_basic` + `instagram_content_publish` además de los de Facebook, autorizado solo a página TuHoy, BM TuHoy y cuenta tuhoynoticias.
+- Primer post 13-oct 14:29 Chicago: id Graph `18113286848606782`, permalink https://www.instagram.com/p/Decj_SNjrUU/ (nota del campo / inmigrantes). Una por pasada, nada con más de 2 h de retraso.
+- Foto de perfil de Instagram: el navegador no puede subir archivos; Raul puede ponerla desde el móvil.
 
 ## Checkpoint plan para llegar a más personas, semana 1 (2026-10-13 · Cursor/Claude)
 - Raul pidió un plan para llegar a más gente y eligió hacer «todo lo de esta semana». Punto de partida: 2 suscriptores (Raul y un lector), Facebook con 0 seguidores y 10–50 visitas reales al día (Cloudflare Web Analytics, que ya estaba activa desde el 29-sep).
@@ -11,7 +12,7 @@
 - `scripts/daily_digest.py`: boletín «Lo que importa hoy» a las 07:00 Chicago como post de solo correo (`#boletin`) por Ghost + Mailgun. `DIGEST_MODE=on` en `.env`. Prueba enviada y entregada solo a Raul (post `6ace6f25099bf60001e24501`, segmento `label:prueba-boletin`). El primer envío real sale el 14-oct a las 07:00.
 - `scripts/indexnow.py` + Worker de Cloudflare `tuhoy-indexnow` (ruta `tuhoy.com/<clave>.txt`, id de ruta `21fe2733dff04632b0c148828397028a`). Se avisaron las 139 notas (202). Cron cada hora a los :05.
 - No se pudo: activar Crawler Hints (la API no lo permite con la clave global y el panel pide iniciar sesión) ni dar de alta en Bing Webmaster (pide iniciar sesión; IndexNow cubre la indexación). Google News ya no admite altas manuales.
-- Pendiente de los pasos siguientes del plan: que Raul pida `IG_MODE=api` para Instagram, canal de WhatsApp, guías propias de inmigración, noticias locales y promoción pagada opcional.
+- Pendiente de los pasos siguientes del plan: canal de WhatsApp, guías propias de inmigración, noticias locales y promoción pagada opcional.
 
 ## Checkpoint notas sin foto (2026-10-13 · Cursor/Claude)
 - Problema: 4 notas publicadas sin portada, así que Facebook (y X) mostraban el logo. Tres eran de Univision, que sirve sus fotos en AVIF: Ghost 6 las rechaza (415) y `source_photo` las etiquetaba como JPEG. La cuarta (`voz-baja-...`) tenía como fuente businesswire, que da 403.

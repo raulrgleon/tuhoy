@@ -34,7 +34,7 @@ cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin AP
                                      ├─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
                                      └─► scripts/x_posts.py ──► un post en X por nota (@TuHoy_)
                                               ├─► scripts/facebook_posts.py ──► el mismo post en la página de Facebook TuHoy
-                                              └─► scripts/instagram_posts.py ──► foto + pie en @tuhoynoticias (apagado hasta que Raul lo pida)
+                                              └─► scripts/instagram_posts.py ──► foto + pie en @tuhoynoticias
 cron 07 h Chicago ──► scripts/daily_digest.py ──► Ghost + Mailgun ──► boletín «Lo que importa hoy» a los suscriptores
 cron cada hora    ──► scripts/indexnow.py ──► IndexNow (Bing, Yandex…) con las notas nuevas
 
@@ -199,9 +199,9 @@ Cuenta profesional de negocio, categoría «News & media website», bio «Las no
 
 [`scripts/instagram_posts.py`](scripts/instagram_posts.py) publica **los mismos posts que X, a la misma hora**: Instagram no arma vista previa con enlace, así que sube la foto de la nota y pone el texto + la URL en el pie. Lee `data/x_queue.json` (solo lectura) y apunta lo publicado en `data/ig_queue.json`.
 
-- Corre cada 15 minutos desde el cron y **solo actúa si `IG_MODE=api`**. Hoy está en `off` hasta que Raul lo confirme.
+- Corre cada 15 minutos desde el cron y **solo actúa si `IG_MODE=api`**. En producción está en `api` (Raul lo activó el 13-oct-2026).
 - Mismas reglas que Facebook: como mucho **un post por pasada** y ninguno con más de 2 horas de retraso. Sin foto, se omite.
-- @tuhoynoticias ya está ligada 1:1 a la página de Facebook TuHoy (`IG_USER_ID=17841472487834968`). El token de página incluye `instagram_basic` e `instagram_content_publish`. No se publica nada en Instagram hasta que Raul pida `IG_MODE=api`.
+- @tuhoynoticias está ligada 1:1 a la página de Facebook TuHoy (`IG_USER_ID=17841472487834968`). El token de página incluye `instagram_basic` e `instagram_content_publish`. Primero publicado: https://www.instagram.com/p/Decj_SNjrUU/
 
 ```bash
 python3 scripts/instagram_posts.py --dry-run   # muestra lo que publicaría ahora
@@ -249,7 +249,7 @@ Logs: `logs/digest.log` y `logs/indexnow.log`.
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
 | [`x_posts.py`](scripts/x_posts.py) | Escribe y programa un post de X por cada nota nueva tras cada edición |
 | [`facebook_posts.py`](scripts/facebook_posts.py) | Publica los mismos posts en la página de Facebook TuHoy a su hora |
-| [`instagram_posts.py`](scripts/instagram_posts.py) | Publica los mismos posts en @tuhoynoticias (foto + pie; `IG_MODE=off` hasta que Raul lo pida) |
+| [`instagram_posts.py`](scripts/instagram_posts.py) | Publica los mismos posts en @tuhoynoticias (foto + pie; `IG_MODE=api`) |
 | [`daily_digest.py`](scripts/daily_digest.py) | Envía el boletín diario «Lo que importa hoy» a las 07:00 Chicago |
 | [`indexnow.py`](scripts/indexnow.py) | Avisa a Bing y otros buscadores (IndexNow) de las notas nuevas, cada hora |
 | [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost y traduce el asunto de la invitación |
