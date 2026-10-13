@@ -1,3 +1,11 @@
+## Checkpoint estudio completo (2026-10-13 ~15:00 Chicago · Cursor)
+- Pedido de Raul: revisar sitio, publicaciones, envíos, recibos y colaboradores. Canvas: `tuhoy-estudio.canvas.tsx`.
+- **En marcha:** Ghost 6.69.0 200; ediciones 06 y 12 de hoy con 5 notas y foto cada una; `X_MODE`/`FB_MODE`/`IG_MODE`=api publicando 1/pasada; Brevo transaccional; Mailgun `mg.tuhoy.com` listo; articulos@ timer activo; invitaciones ES aplicadas; 22 tests OK.
+- **Hallazgo alto:** `/news-sitemap.xml/` 404 (File not found) aunque `routes.yaml` lo declara y `/venezuela/` sí carga.
+- **Medio:** Ghost timezone `America/New_York` vs cron Chicago; 60 notas `#revisar`; primer boletín real 14-oct 07:00 a 2 suscriptores.
+- **Bajo:** Facebook sin vanity (`profile.php?id=61595145640166`; `tuhoynoticias` libre, falta contraseña); IMAP TimeoutError esporádico; `pendientes` de X no se limpian tras `tweet_id`.
+- Colaboradores: Raul Owner; Kastle/Tatiana/Richard Contributor. Kastle publicó (vía correo + confirmación) el ciberataque en Francia. YouTube aplazado.
+
 ## Checkpoint Instagram @tuhoynoticias (2026-10-13 · Cursor)
 - Cuenta nueva profesional (Business), usuario **@tuhoynoticias**, nombre TuHoy, correo info@tuhoy.com, teléfono 4028240388, categoría News & media website, bio «Las noticias que importan, en español.» + tuhoy.com. No se usó @raul_garcia_us ni @rgcar.run. Sin publicaciones ni invitaciones.
 - Enlace público en el tema 1.5.1 (pie y final de cada nota) y en el boletín. El sitio web del perfil de Instagram solo se edita desde la app.
