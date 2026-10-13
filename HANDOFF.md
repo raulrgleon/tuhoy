@@ -2,7 +2,7 @@
 - Pedido de Raul: publicar en Facebook como en X. No había página; se eligió la configuración guiada en el navegador con su sesión.
 - Página "TuHoy" creada (ID `1408807572318535`): categoría "Sitio web de noticias y medios de comunicación", web, teléfono +1 4028240388 e info@tuhoy.com. Sin foto de perfil ni portada todavía (el navegador no puede subir archivos). No se invitó a amigos ni se conectó WhatsApp.
 - App de Meta "TuHoy Publicador" (App ID `1625626036013171`, sin portafolio comercial) con `pages_show_list`, `pages_read_engagement` y `pages_manage_posts`, autorizada solo para la página TuHoy (no para Cheap Energy, Truckwls, De To' ni RG Motors).
-- Token de usuario ampliado (caduca el 12-dic-2026), del que sale el token de página sin caducidad (`debug_token`: tipo PAGE, `expires_at` 0). Guardado solo en `.env` como `FB_PAGE_TOKEN`, junto a `FB_PAGE_ID`. `FB_MODE=off` hasta que Raul confirme la primera publicación.
+- Token de usuario ampliado (caduca el 12-dic-2026), del que sale el token de página sin caducidad (`debug_token`: tipo PAGE, `expires_at` 0). Guardado solo en `.env` como `FB_PAGE_TOKEN`, junto a `FB_PAGE_ID`. Raul aprobó activarlo: `FB_MODE=api`. Primer post: 1408807572318535_122104668867504854 (12:15 Chicago, nota de ICE en Houston), público y con vista previa con foto.
 - `scripts/facebook_posts.py` nuevo: lee `data/x_queue.json` (solo lectura) y publica a su hora el mismo texto con el enlace en `/{page}/feed`. Un post por pasada como máximo y ninguno con más de 2 h de retraso. Registro en `data/fb_queue.json` (ignorado por git). Cron cada 15 min en `install_daily_cron.sh`.
 
 ## Checkpoint portada, notas sin desarrollo y ajustes en Ghost 6 (2026-10-13 · Cursor/Claude)
