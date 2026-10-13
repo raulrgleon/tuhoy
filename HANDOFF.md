@@ -1,6 +1,6 @@
 ## Checkpoint docs alineados al vivo (2026-10-13 ~15:15 Chicago · Cursor)
 - Rechequeo: `/noticias-google/` 200 (100 notas), `/news-sitemap.xml` → 301 a esa ruta, `facebook.com/tuhoynoticias` 200, tuhoy.com enlaza esa URL, `/venezuela/` 200.
-- HANDOFF del estudio, README ya en `64aec40`, `.env.example` (URL pública de Facebook) y canvas `tuhoy-estudio.canvas.tsx` coinciden con eso. Search Console: falta enviar `https://tuhoy.com/noticias-google/`.
+- HANDOFF del estudio, README ya en `64aec40`, `.env.example` (URL pública de Facebook) y canvas `tuhoy-estudio.canvas.tsx` coinciden con eso. Search Console: enviado `https://tuhoy.com/noticias-google/` el 13-oct ~15:16 (lectura de Google aún pendiente).
 - Workspace repo-tuhoy no se pudo actualizar: workspace.dnet.llc pide login y no hay sesión ni acceso a Postgres.
 
 ## Checkpoint Facebook tuhoynoticias + sitemap Google News (2026-10-13 ~15:10 Chicago · Cursor)
