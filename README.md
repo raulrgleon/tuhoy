@@ -13,6 +13,7 @@ La edición diaria automática la firma **Raul Garcia**. Los artículos enviados
 - [Redacción (writer.py)](#redacción-writerpy)
 - [Posts diarios en X](#posts-diarios-en-x-tuhoy_)
 - [Página de Facebook](#página-de-facebook-tuhoy)
+- [Instagram](#instagram-tuhoynoticias)
 - [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)
 - [Scripts](#scripts)
 - [Tema](#tema)
@@ -32,7 +33,8 @@ cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin AP
                                      │
                                      ├─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
                                      └─► scripts/x_posts.py ──► un post en X por nota (@TuHoy_)
-                                              └─► scripts/facebook_posts.py ──► el mismo post en la página de Facebook TuHoy
+                                              ├─► scripts/facebook_posts.py ──► el mismo post en la página de Facebook TuHoy
+                                              └─► scripts/instagram_posts.py ──► foto + pie en @tuhoynoticias (apagado hasta que Raul lo pida)
 cron 07 h Chicago ──► scripts/daily_digest.py ──► Ghost + Mailgun ──► boletín «Lo que importa hoy» a los suscriptores
 cron cada hora    ──► scripts/indexnow.py ──► IndexNow (Bing, Yandex…) con las notas nuevas
 
@@ -75,6 +77,7 @@ Todas viven en `.env` (permisos `600`, ignorado por git). Plantilla: [`.env.exam
 | `LLM_FACTCHECK` | `1` (por defecto) activa la pasada de verificación de hechos |
 | `X_*` | Posts de X (ver [Posts diarios en X](#posts-diarios-en-x-tuhoy_)) |
 | `FB_MODE`, `FB_PAGE_ID`, `FB_PAGE_TOKEN` | Página de Facebook (ver [Página de Facebook](#página-de-facebook-tuhoy)) |
+| `IG_MODE`, `IG_USER_ID` | Instagram @tuhoynoticias (ver [Instagram](#instagram-tuhoynoticias)); usa el token de la página |
 | `DIGEST_MODE`, `DIGEST_POSTS`, `DIGEST_MIN`, `DIGEST_NEWSLETTER` | Boletín diario (ver [Boletín diario](#boletín-diario-y-crecimiento)) |
 | `INDEXNOW_KEY` | Clave pública de IndexNow, servida por el Worker `tuhoy-indexnow` |
 
@@ -190,6 +193,23 @@ python3 scripts/facebook_posts.py             # publica lo que toca
 
 Logs: `logs/facebook.log` y `logs/facebook-errors.log`.
 
+## Instagram (@tuhoynoticias)
+
+Cuenta profesional de negocio, categoría «News & media website», bio «Las noticias que importan, en español.» con tuhoy.com. No es @raul_garcia_us ni @rgcar.run.
+
+[`scripts/instagram_posts.py`](scripts/instagram_posts.py) publica **los mismos posts que X, a la misma hora**: Instagram no arma vista previa con enlace, así que sube la foto de la nota y pone el texto + la URL en el pie. Lee `data/x_queue.json` (solo lectura) y apunta lo publicado en `data/ig_queue.json`.
+
+- Corre cada 15 minutos desde el cron y **solo actúa si `IG_MODE=api`**. Hoy está en `off` hasta que Raul lo confirme.
+- Mismas reglas que Facebook: como mucho **un post por pasada** y ninguno con más de 2 horas de retraso. Sin foto, se omite.
+- Hace falta que @tuhoynoticias esté ligada 1:1 a la página de Facebook TuHoy y que el token de página tenga `instagram_content_publish`. El ID de Instagram se puede dejar en `IG_USER_ID` o se lee de la página.
+
+```bash
+python3 scripts/instagram_posts.py --dry-run   # muestra lo que publicaría ahora
+python3 scripts/instagram_posts.py             # publica lo que toca
+```
+
+Logs: `logs/instagram.log` y `logs/instagram-errors.log`.
+
 ## Boletín diario y crecimiento
 
 Punto de partida (13-oct-2026): 2 suscriptores, página de Facebook recién creada y entre 10 y 50 visitas reales al día según Cloudflare Web Analytics. Las cifras de «visitantes» del panel de tráfico de Cloudflare (~550/día) incluyen sobre todo robots.
@@ -206,7 +226,7 @@ python3 scripts/daily_digest.py --dry-run                  # notas elegidas y HT
 python3 scripts/daily_digest.py --test raulrgleon@gmail.com # prueba solo a ese suscriptor
 ```
 
-**Captación en la web (tema 1.5.0).** Cada nota tiene botones para compartir por WhatsApp, Facebook y X (además de «Compartir» y «Copiar enlace»). Al final de la nota hay una caja de suscripción «Lo que importa hoy, en tu correo», que no ven los ya suscritos, y enlaces a Facebook y X. El pie enlaza también a la página de Facebook.
+**Captación en la web (tema 1.5.1).** Cada nota tiene botones para compartir por WhatsApp, Facebook y X (además de «Compartir» y «Copiar enlace»). Al final de la nota hay una caja de suscripción «Lo que importa hoy, en tu correo», que no ven los ya suscritos, y enlaces a Facebook, Instagram y X. El pie enlaza también a la página de Facebook y a [@tuhoynoticias](https://www.instagram.com/tuhoynoticias/).
 
 **Buscadores.** [`scripts/indexnow.py`](scripts/indexnow.py) avisa cada hora por IndexNow (Bing, que alimenta a DuckDuckGo, Yahoo y ChatGPT, además de Yandex, Seznam y Naver) de las notas publicadas que aún no se avisaron (`data/indexnow_state.json`). La clave se sirve en `https://tuhoy.com/<INDEXNOW_KEY>.txt` desde el Worker de Cloudflare `tuhoy-indexnow`, en la ruta `tuhoy.com/<clave>.txt`. Google no usa IndexNow: lee los sitemaps enviados en Search Console. Google News ya no admite altas manuales en Publisher Center; incluye los sitios de forma automática según su contenido.
 
@@ -229,10 +249,11 @@ Logs: `logs/digest.log` y `logs/indexnow.log`.
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
 | [`x_posts.py`](scripts/x_posts.py) | Escribe y programa un post de X por cada nota nueva tras cada edición |
 | [`facebook_posts.py`](scripts/facebook_posts.py) | Publica los mismos posts en la página de Facebook TuHoy a su hora |
+| [`instagram_posts.py`](scripts/instagram_posts.py) | Publica los mismos posts en @tuhoynoticias (foto + pie; `IG_MODE=off` hasta que Raul lo pida) |
 | [`daily_digest.py`](scripts/daily_digest.py) | Envía el boletín diario «Lo que importa hoy» a las 07:00 Chicago |
 | [`indexnow.py`](scripts/indexnow.py) | Avisa a Bing y otros buscadores (IndexNow) de las notas nuevas, cada hora |
 | [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost y traduce el asunto de la invitación |
-| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, los posts de X y Facebook, el boletín, IndexNow y las plantillas de correo |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, los posts de X, Facebook e Instagram, el boletín, IndexNow y las plantillas de correo |
 
 Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
@@ -246,7 +267,7 @@ python3 scripts/upload_theme.py   # empaqueta, sube y activa el tema
 
 También se puede subir el ZIP a mano en Ghost → Settings → Design → Change theme → Upload theme.
 
-Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a @TuHoy_ en X y al WhatsApp/teléfono del diario, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, botones para compartir y caja de suscripción (ver [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)), la meta `twitter:site` y la meta de verificación de Search Console.
+Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a Facebook, @tuhoynoticias, @TuHoy_ en X y al WhatsApp/teléfono del diario, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, botones para compartir y caja de suscripción (ver [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)), la meta `twitter:site` y la meta de verificación de Search Console.
 
 ### Portada
 
@@ -268,6 +289,7 @@ Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces leg
 
 - Correo: info@tuhoy.com (reenvía a Gmail, ver abajo).
 - Teléfono y WhatsApp: **(402) 824-0388** (`https://wa.me/14028240388`, `tel:+14028240388`). Aparece en el pie, al final de cada nota y en `/contacto/`. Si cambia, edita `themes/tuhoy/partials/footer.hbs`, `themes/tuhoy/post.hbs` y `PHONE`/`PHONE_WA` en `scripts/legal_pages.py`.
+- Instagram: [@tuhoynoticias](https://www.instagram.com/tuhoynoticias/). En el pie y al final de cada nota.
 
 ## Correo
 

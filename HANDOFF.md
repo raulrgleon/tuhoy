@@ -1,3 +1,9 @@
+## Checkpoint Instagram @tuhoynoticias (2026-10-13 · Cursor)
+- Cuenta nueva profesional (Business), usuario **@tuhoynoticias**, nombre TuHoy, correo info@tuhoy.com, teléfono 4028240388, categoría News & media website, bio «Las noticias que importan, en español.» + tuhoy.com. No se usó @raul_garcia_us ni @rgcar.run. Sin publicaciones ni invitaciones.
+- Enlace público en el tema 1.5.1 (pie y final de cada nota) y en el boletín. El sitio web del perfil de Instagram solo se edita desde la app.
+- `scripts/instagram_posts.py`: mismos posts que X (foto de Ghost + pie con URL). `IG_MODE=off` en `.env` hasta que Raul lo pida. Cron cada 15 min. `data/ig_queue.json` en gitignore.
+- Ligar @tuhoynoticias a la página Facebook TuHoy (ID 1408807572318535, BM 1408851158980843) quedó a medias: el flujo OIDC de Meta deja la pestaña `oidclink` en blanco en este navegador (BigPipe no pinta). La Graph API confirma que la página aún no tiene `instagram_business_account`. Cuando esté ligada hay que añadir `instagram_content_publish` al token y entonces Raul puede pedir `IG_MODE=api`.
+
 ## Checkpoint plan para llegar a más personas, semana 1 (2026-10-13 · Cursor/Claude)
 - Raul pidió un plan para llegar a más gente y eligió hacer «todo lo de esta semana». Punto de partida: 2 suscriptores (Raul y un lector), Facebook con 0 seguidores y 10–50 visitas reales al día (Cloudflare Web Analytics, que ya estaba activa desde el 29-sep).
 - Tema 1.5.0: botones de WhatsApp, Facebook y X en cada nota; caja de suscripción `data-members-form="signup"` al final (oculta para miembros); enlaces a la página de Facebook en la nota y el pie.

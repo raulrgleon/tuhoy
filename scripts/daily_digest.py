@@ -35,6 +35,7 @@ DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "doming
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
          "septiembre", "octubre", "noviembre", "diciembre"]
 FACEBOOK = "https://www.facebook.com/profile.php?id=61595145640166"
+INSTAGRAM = "https://www.instagram.com/tuhoynoticias/"
 
 
 def log(msg: str) -> None:
@@ -97,7 +98,7 @@ def build_html(posts: list[dict], today: datetime) -> str:
     parts.append(
         "<hr><p>¿Te reenviaron este correo? Suscríbete gratis en "
         '<a href="https://tuhoy.com/#/portal/signup">tuhoy.com</a>. Síguenos en '
-        f'<a href="{FACEBOOK}">Facebook</a> y en <a href="https://x.com/TuHoy_">X</a>. '
+        f'<a href="{FACEBOOK}">Facebook</a>, <a href="{INSTAGRAM}">Instagram</a> y <a href="https://x.com/TuHoy_">X</a>. '
         "¿Sabes algo que debamos contar? Escríbenos por "
         '<a href="https://wa.me/14028240388">WhatsApp al (402) 824-0388</a>.</p>'
     )
