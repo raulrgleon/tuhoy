@@ -5,6 +5,7 @@ Conserva slug (URL), fecha, imagen y crédito. Guarda copia de seguridad antes d
 
   python3 scripts/rewrite_published.py --limit 1          # prueba con una nota
   python3 scripts/rewrite_published.py --slug mi-nota     # una nota concreta
+  python3 scripts/rewrite_published.py --slug mi-nota --source URL --source URL2  # con fuentes extra
   python3 scripts/rewrite_published.py                    # todas las pendientes
   python3 scripts/rewrite_published.py --restore data/backup-posts-XXXX.json
 """
@@ -44,9 +45,9 @@ def original_title(url: str) -> str:
     return daily.page_title(raw) or "artículo original"
 
 
-def build_sources(post: dict) -> list[dict]:
+def build_sources(post: dict, extra: list[str] | None = None) -> list[dict]:
     sources = []
-    for url in source_links(post.get("html") or ""):
+    for url in source_links(post.get("html") or "") + (extra or []):
         text = daily.extract_article(url, limit=9000)
         if len(text) < MIN_SOURCE_CHARS:
             continue
@@ -59,8 +60,8 @@ def is_inmig(post: dict) -> bool:
     return any(t["slug"] in ("inmigracion", "latinos") for t in post.get("tags") or [])
 
 
-def rewrite(ghost, post: dict) -> str:
-    sources = build_sources(post)
+def rewrite(ghost, post: dict, extra: list[str] | None = None) -> str:
+    sources = build_sources(post, extra)
     if not sources:
         return f"skip sin fuente legible: {post['slug']}"
     art = writer.write_article(sources, inmigracion=is_inmig(post), log=daily.log)
@@ -74,7 +75,7 @@ def rewrite(ghost, post: dict) -> str:
     tags.append({"name": daily.IA_TAG})
     if art["flagged"]:
         tags.append({"name": daily.REVIEW_TAG})
-        writer.queue_for_review(art, sources[0]["url"], "fuentes escasas" if art["thin_sources"] else "afirmaciones sin sustento")
+        writer.queue_for_review(art, sources[0]["url"], "afirmaciones sin sustento")
 
     payload = {
         "posts": [
@@ -102,6 +103,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--slug", default="")
+    parser.add_argument("--source", action="append", default=[], help="fuente extra (con --slug); repetible")
     parser.add_argument("--workers", type=int, default=3)
     parser.add_argument("--restore", default="")
     args = parser.parse_args()
@@ -162,7 +164,7 @@ def main() -> int:
 
     results = []
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(rewrite, ghost, p): p for p in posts}
+        futures = {pool.submit(rewrite, ghost, p, args.source if args.slug else None): p for p in posts}
         for fut in as_completed(futures):
             try:
                 line = fut.result()

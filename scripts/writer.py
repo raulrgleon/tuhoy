@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path("/home/raul/tuhoy")
 PROMPTS = ROOT / "prompts"
 REVIEW_QUEUE = ROOT / "data" / "review_queue.jsonl"
+MIN_WORDS = 200
 
 PROVIDERS = {
     "openai": {"base": "https://api.openai.com/v1", "model": "gpt-5.5", "key": "OPENAI_API_KEY"},
@@ -331,7 +332,7 @@ def validate(article: dict) -> None:
     for key in ("headline", "deck", "body"):
         if not (article.get(key) or "").strip():
             raise WriterError(f"falta {key}")
-    if len(article["body"].split()) < 150:
+    if len(article["body"].split()) < MIN_WORDS:
         raise WriterError("cuerpo demasiado corto")
 
 
@@ -381,7 +382,9 @@ def write_article(sources: list[dict], inmigracion: bool = False, cfg: dict | No
     headline = re.sub(r"\s+", " ", final["headline"]).strip()
     if len(headline) > 90:
         headline = headline[:89].rsplit(" ", 1)[0] + "…"
-    flagged = bool(unsupported) or bool(final.get("thin_sources"))
+    # thin_sources solo indica que la nota es breve (casi siempre hay una única fuente);
+    # a revisión van las notas con afirmaciones que el verificador no encontró en la fuente.
+    flagged = bool(unsupported)
     article = {
         "headline": headline,
         "deck": re.sub(r"\s+", " ", final["deck"]).strip(),

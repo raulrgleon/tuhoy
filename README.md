@@ -1,6 +1,6 @@
 # TuHoy
 
-Periódico digital en español en [tuhoy.com](https://tuhoy.com): noticias del mundo, inmigración y comunidad latina en EE. UU. Corre sobre **Ghost 5 + MySQL 8**, con un tema propio y una edición diaria automática que parte de fuentes reales.
+Periódico digital en español en [tuhoy.com](https://tuhoy.com): noticias del mundo, inmigración y comunidad latina en EE. UU. Corre sobre **Ghost 6.69.0 + MySQL 8**, con un tema propio y una edición diaria automática que parte de fuentes reales.
 
 La edición diaria automática la firma **Raul Garcia**. Los artículos enviados por el equipo conservan la autoría de su cuenta de Ghost.
 
@@ -23,7 +23,7 @@ La edición diaria automática la firma **Raul Garcia**. Los artículos enviados
 ## Arquitectura
 
 ```
-Lectores ──► Cloudflare (DNS, HTTPS, túnel) ──► Traefik (Coolify) ──► Ghost 5 :2368 ──► MySQL 8
+Lectores ──► Cloudflare (DNS, HTTPS, túnel) ──► Traefik (Coolify) ──► Ghost 6.69.0 :2368 ──► MySQL 8
                                                                           ▲
 cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin API ────┘
                                      │
@@ -76,8 +76,8 @@ En Coolify, las variables del contenedor se editan en TuHoy Ghost → Environmen
 
 | Ranura | Notas | Fuentes |
 | --- | --- | --- |
-| Inmigración (`--inmig`, 2) | La primera va **destacada** (noticia principal de la portada) | La Opinión, El Diario NY, y las notas de inmigración de Univision, Telemundo y CNN en Español |
-| General (`--general`, 2) | Mundo, política, economía, salud… | BBC Mundo, France 24, CNN en Español, Univision, Telemundo |
+| Inmigración (`--inmig`, 2) | Notas de inmigración y latinos en EE. UU. | La Opinión, El Diario NY, y las notas de inmigración de Univision, Telemundo y CNN en Español |
+| General (`--general`, 2) | Mundo, política, economía, salud… | BBC Mundo, CNN en Español, Univision, Telemundo |
 | Países (`--paises`, 1) | Llevan siempre la etiqueta **Venezuela** o **Cuba** (canales `/venezuela/` y `/cuba/`) | El Pitazo, Tal Cual, El Nacional (Venezuela); 14ymedio, CiberCuba (Cuba) |
 
 Cómo trabaja cada edición:
@@ -86,11 +86,11 @@ Cómo trabaja cada edición:
 2. Descarta vídeos, directos, espectáculos y deportes, y las piezas de **más de 48 horas** (`MAX_AGE_HOURS`).
 3. Descarta duplicados por URL, por título y por parecido con notas ya publicadas (estado en `data/edition_state.json`).
 4. Extrae el texto de la fuente (quitando el menú que algunas páginas ponen antes del titular); si no hay texto útil o trae restos de código de la página, descarta la pieza. En la ranura de países exige poder leer el artículo completo. **No inventa noticias.**
-5. Redacta la nota con `writer.py`. Sin clave de modelo, cae al resumen extractivo (etiqueta interna `#resumen-automatico`, no indexable hasta que se reescriba).
+5. Redacta la nota con `writer.py` (mínimo 200 palabras). Si la redacción falla o la fuente no da para desarrollar la noticia, **no publica** y pasa a la siguiente: ya no hay resúmenes extractivos de 3 a 5 frases.
 6. Pone la foto de la fuente con su crédito, etiquetas (sección + Venezuela/Cuba si el titular o la entradilla los nombran), extracto y meta SEO.
-7. Publica en Ghost. Las piezas dudosas se publican igual con la etiqueta interna `#revisar` y se anotan en `data/review_queue.jsonl`.
+7. Publica en Ghost **sin destacar**: la portada la decide el equipo (ver «Portada»). Si el verificador encontró afirmaciones sin respaldo en la fuente (ya eliminadas del texto), la nota se publica igual con la etiqueta interna `#revisar` y se anota en `data/review_queue.jsonl`. Que la nota sea breve o tenga una sola fuente ya no la marca.
 
-Fuentes descartadas: **EFE** y **AP** bloquean la lectura automática (403); **Voz de América** no publica desde marzo de 2025; Cubanet y Diario de Cuba no dejan leer el texto. Google News no sirve porque cifra los enlaces.
+Fuentes descartadas: **France 24**, **EFE** y **AP** bloquean la lectura automática (403); **Voz de América** no publica desde marzo de 2025; Cubanet y Diario de Cuba no dejan leer el texto. Google News no sirve porque cifra los enlaces.
 
 ```bash
 python3 scripts/daily_edition.py --dry-run            # muestra qué publicaría, sin redactar ni publicar
@@ -128,7 +128,7 @@ python3 scripts/eval_writer.py           # compara y escribe data/eval_report.md
 
 [`scripts/x_posts.py`](scripts/x_posts.py) corre **justo después de cada edición** (06:00, 12:00 y 18:00 America/Chicago): **cada nota nueva sale con su post**.
 
-1. Toma las notas publicadas en las últimas 30 horas que aún no tienen post (historial en `data/x_queue.json`), sin `#revisar` ni `#resumen-automatico`. Entran también las que sube el equipo a mano o por correo.
+1. Toma las notas publicadas en las últimas 30 horas que aún no tienen post (historial en `data/x_queue.json`), sin `#resumen-automatico` (las `#revisar` también salen). Entran también las que sube el equipo a mano o por correo.
 2. Escribe un post por nota con [`prompts/tweets.md`](prompts/tweets.md), ordenados de más a menos importante (máximo `X_POSTS` por tanda; hoy 14).
 3. Los reparte cada `X_SPACING` minutos (60) desde unos minutos después de la edición hasta la siguiente (la última tanda, hasta las 23:00). Si hay más notas que huecos, los junta (mínimo 20 minutos). Los posts pendientes de tandas anteriores se conservan y los nuevos van detrás.
 4. `X_LINKS=2` es un cupo **por día**: los 2 primeros posts del día llevan enlace (cuestan $0.20); el resto, no.
@@ -184,6 +184,13 @@ También se puede subir el ZIP a mano en Ghost → Settings → Design → Chang
 
 Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a @TuHoy_ en X y al WhatsApp/teléfono del diario, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, la meta `twitter:site` y la meta de verificación de Search Console.
 
+### Portada
+
+- **Última hora:** franja con las 8 notas más recientes.
+- **Apertura:** la noticia grande y las 3 de al lado son las **4 notas destacadas modificadas más recientemente** (`order="updated_at desc"` en `home.hbs`). Para poner una nota en portada: abre la nota → Settings → **Feature this post** → Update. Pasa a ser la principal al momento, aunque la noticia sea de días atrás. Para quitarla, desmárcala. Editar una nota destacada también la sube.
+- Las ediciones automáticas **no destacan nada**: la apertura solo cambia cuando el equipo destaca o edita una nota.
+- **Secciones** (Política, Mundo, Economía…): las 5 más recientes de cada una, sin las destacadas para no repetirlas.
+
 **Hook de temas:** Ghost 5 descarga los ZIP de GitHub con permisos 000 y helpers de Ghost 6, lo que rompe la instalación en Docker. El compose carga [`ghost-hooks/sanitize-github-theme.js`](ghost-hooks/sanitize-github-theme.js) para arreglarlo. No borres ese archivo y reinicia TuHoy Ghost en Coolify si lo cambias.
 
 ## SEO y Google News
@@ -213,7 +220,7 @@ Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces leg
 
 El reenvío de Namecheap no sirve porque el dominio usa los nameservers de Cloudflare.
 
-**Invitación al equipo (staff) en español:** Ghost no deja editar este correo desde el panel. La versión propia está en [`ghost-overrides/mail/invite-user.html`](ghost-overrides/mail/invite-user.html) (título "¡Bienvenido!", botón "Activar mi cuenta", icono de TuHoy y ayuda en info@tuhoy.com). [`scripts/apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) la copia sobre `invite-user.html` e `invite-user-by-api-key.html` de Ghost entrando al contenedor por `/proc/<pid>/root` (Ghost corre con el mismo usuario, uid 1000). Ghost lee la plantilla en cada envío, así que no hace falta reiniciar. El cron la vuelve a aplicar cada 10 minutos porque Coolify recrea el contenedor en cada despliegue (registro en `logs/overrides.log`). El asunto es "Te invitamos a unirte a TuHoy": el mismo script parchea `core/server/services/invites/Invites.js` y, como Ghost solo lo lee al arrancar, lo reinicia con SIGTERM (Docker lo levanta en unos segundos por `restart: unless-stopped`; el script espera a que tuhoy.com responda 200). Solo reinicia cuando el parche falta, es decir, una vez tras cada despliegue. Si Ghost se actualiza, revisa que las variables de la plantilla (`{{resetLink}}`, `{{ siteUrl }}`, `{{recipientEmail}}`) sigan existiendo.
+**Invitación al equipo (staff) en español:** Ghost no deja editar este correo desde el panel. La versión propia está en [`ghost-overrides/mail/invite-user.html`](ghost-overrides/mail/invite-user.html) (título "¡Bienvenido!", botón "Activar mi cuenta", icono de TuHoy y ayuda en info@tuhoy.com). [`scripts/apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) la copia sobre `invite-user.html` e `invite-user-by-api-key.html` de Ghost (`core/server/lib/mail/templates/` en Ghost 6; `core/server/services/mail/templates/` en Ghost 5) entrando al contenedor por `/proc/<pid>/root` (Ghost corre con el mismo usuario, uid 1000). Ghost lee la plantilla en cada envío, así que no hace falta reiniciar. El cron la vuelve a aplicar cada 10 minutos porque Coolify recrea el contenedor en cada despliegue (registro en `logs/overrides.log`). El asunto es "Te invitamos a unirte a TuHoy": el mismo script parchea `core/server/services/invites/invites.js` (`Invites.js` en Ghost 5) y, como Ghost solo lo lee al arrancar, lo reinicia con SIGTERM (Docker lo levanta en unos segundos por `restart: unless-stopped`; el script espera a que tuhoy.com responda 200). Solo reinicia cuando el parche falta, es decir, una vez tras cada despliegue. Si Ghost se actualiza, revisa que las variables de la plantilla (`{{resetLink}}`, `{{ siteUrl }}`, `{{recipientEmail}}`) sigan existiendo.
 
 **SPF:** `v=spf1 include:_spf.mx.cloudflare.net include:spf.brevo.com ~all`. Debe haber un solo registro SPF; si añades otro proveedor, agrégalo a este.
 
@@ -275,7 +282,7 @@ sudo systemctl enable --now tuhoy-email-articles.timer
 
 Las credenciales de Gmail son independientes del estado de Ghost; rotar una contraseña requiere actualizar `/etc/tuhoy-mail.env`. El servicio se ejecuta como Raul, con filesystem readonly salvo su estado y límites de recursos. No exponer este archivo ni el SQLite en GitHub o en la web. Incluir ambos en respaldos **cifrados**: para SQLite usar su API de backup o `.backup` con sqlite3. No copiar una base abierta de forma insegura. Respaldo inicial consistente y cifrado: /data/tuhoy/backups/email-intake-20261009T020723Z.tar.gz.enc (AES-256-CBC/PBKDF2; clave protegida compartida del respaldo del servidor). La periodicidad de estos respaldos sigue pendiente; no existe almacenamiento externo nuevo.
 
-Invitaciones: `scripts/patch_invite_permissions.py` añade únicamente información del rol al mail en Ghost 5; no modifica ACL. `apply_ghost_overrides.sh` aplica plantilla y parche tras un despliegue de Coolify, valida sintaxis, conserva el código previo y reinicia Ghost solo si falta el parche. Una versión incompatible aborta sin modificar el código. Desactivar recepción: `sudo systemctl disable --now tuhoy-email-articles.timer`; terminar una ejecución en curso solo después de revisar su estado. No elimina artículos, correos ni reglas de reenvío.
+Invitaciones: `scripts/patch_invite_permissions.py` añade únicamente información del rol al mail en Ghost 5 y 6 (`Invites.js` en Ghost 5, `invites.js` en Ghost 6); no modifica ACL. `apply_ghost_overrides.sh` aplica plantilla y parche tras un despliegue de Coolify, valida sintaxis, conserva el código previo y reinicia Ghost solo si falta el parche. Una versión incompatible aborta sin modificar el código. Desactivar recepción: `sudo systemctl disable --now tuhoy-email-articles.timer`; terminar una ejecución en curso solo después de revisar su estado. No elimina artículos, correos ni reglas de reenvío.
 
 Pruebas:
 
@@ -302,5 +309,7 @@ La incorporación inicial de noticias publicadas con referencia explícita al pa
 En esta instalación Ghost5 la carga de rutas por clave de integración devuelve501. Se respaldó el archivo activo, se copió `routes.yaml` al volumen persistente `content/settings/routes.yaml` y se reinició únicamente Ghost (arranque3s). Ambas secciones tienen título/canonical propios y tres noticias iniciales; portada y sitemap200. Respaldo privado de rutas y etiquetas previas: `/data/tuhoy/backups/country-sections-20261009/`. Las taxonomías de esas etiquetas redirigen al canal canónico.
 
 ## Explore en Ghost5
+
+**Ghost 6 (desde el 12-oct-2026):** el botón Explore ya es un enlace normal a una pestaña nueva; `apply_ghost_overrides.sh` solo aplica este parche si encuentra el código de Ghost 5.
 
 El directorio actual Explore bloquea su apertura en iframe. `scripts/patch_explore_link.py` cambia únicamente el botón Explore del panel para abrir `https://explore.ghost.org/` en una pestaña nueva, con `noopener,noreferrer`. No cambia CSP, autenticación ni versiones. Conserva el JS anterior, comprueba sintaxis y coincidencia exacta; versiones incompatibles abortan sin escribir. `apply_ghost_overrides.sh` lo reaplica en su ciclo existente tras recreación de Coolify, sin reiniciar por este parche. Si el panel ya estaba abierto, recargar sin caché para recibir el JS actualizado. El acceso directo antiguo `#/explore` sigue siendo la ruta nativa; usar el botón Explore para abrir el directorio externo.

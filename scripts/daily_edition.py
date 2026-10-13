@@ -47,9 +47,9 @@ CTX = ssl.create_default_context()
 SITEMAP_CNN = "https://cnnespanol.cnn.com/sitemap/news.xml"
 SITEMAP_UNIVISION = "https://www.univision.com/feed-sitemap/google-news/noticias"
 SITEMAP_TELEMUNDO = "https://www.telemundo.com/sitemap/telemundo/sitemap-news"
+# France 24 devuelve 403 al leer sus artículos: sin texto no hay nota desarrollada.
 FEEDS_GENERAL = [
     "https://feeds.bbci.co.uk/mundo/rss.xml",
-    "https://www.france24.com/es/rss",
     SITEMAP_CNN,
     SITEMAP_UNIVISION,
     SITEMAP_TELEMUNDO,
@@ -99,6 +99,12 @@ INMIG_RE = re.compile(
     r"\b(inmigraci[oó]n|inmigrantes?|migrantes?|migraci[oó]n|\bice\b|dhs\b|"
     r"asilo|deportaci[oó]n|deportados?|\blatinos?\b|\blatinas?\b|hispan[oa]s?|"
     r"frontera|green card|medicaid|\bcbp\b|indocumentad)",
+    re.I,
+)
+# En el cuerpo, "frontera", "latinos" o "Medicaid" aparecen en noticias de otros temas.
+INMIG_TEXT_RE = re.compile(
+    r"\b(inmigraci[oó]n|inmigrantes?|migrantes?|\bice\b|asilo|deportaci[oó]n|deportados?|"
+    r"green card|\bcbp\b|indocumentad)",
     re.I,
 )
 TAG_RULES = [
@@ -208,7 +214,38 @@ class Ghost:
             return e.code, parsed
 
     def get(self, path: str):
-        return self._req("GET", path)
+        parts = urllib.parse.urlsplit(path)
+        query = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
+        if not any(key == "limit" and value == "all" for key, value in query):
+            return self._req("GET", path)
+
+        resource = parts.path.strip("/").split("/")[0]
+        base_query = [(key, value) for key, value in query if key not in {"limit", "page"}]
+        base_query.append(("limit", "100"))
+        first_path = urllib.parse.urlunsplit(("", "", parts.path, urllib.parse.urlencode(base_query + [("page", "1")]), ""))
+        status, first = self._req("GET", first_path)
+        if status >= 300 or not isinstance(first, dict):
+            return status, first
+
+        items = first.get(resource)
+        pagination = first.get("meta", {}).get("pagination", {})
+        if not isinstance(items, list) or not isinstance(pagination, dict):
+            return status, first
+        try:
+            page_count = max(1, int(pagination.get("pages", 1)))
+        except (TypeError, ValueError):
+            return status, first
+
+        results = list(items)
+        for page in range(2, page_count + 1):
+            page_path = urllib.parse.urlunsplit(("", "", parts.path, urllib.parse.urlencode(base_query + [("page", str(page))]), ""))
+            page_status, payload = self._req("GET", page_path)
+            if page_status >= 300 or not isinstance(payload, dict) or not isinstance(payload.get(resource), list):
+                return page_status, payload
+            results.extend(payload[resource])
+
+        first[resource] = results
+        return status, first
 
     def post_json(self, path: str, body: dict):
         return self._req("POST", path, json.dumps(body).encode(), "application/json")
@@ -633,7 +670,7 @@ def classify(title: str, text: str, force_inmig: bool) -> list[str]:
     # Clasificar con el titular y solo el inicio evita etiquetas falsas.
     blob = f"{title} {text[:500]}"
     tags = []
-    if force_inmig or INMIG_RE.search(blob):
+    if force_inmig or INMIG_RE.search(title) or INMIG_TEXT_RE.search(text[:500]):
         tags.extend(["Inmigración", "Latinos"])
     for slug, rx in TAG_RULES:
         if rx.search(blob):
@@ -885,7 +922,7 @@ def collect(force_inmig: bool, limit: int, feeds: list[str] | None = None) -> li
     return out
 
 
-def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, known: list[str], state: dict) -> bool:
+def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], state: dict) -> bool:
     title = headline_es(item["title"])
     if any(similar(title, k) for k in known):
         log(f"skip similar: {title}")
@@ -910,7 +947,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
     if DRY_RUN:
         tags = classify(title, text, force_inmig)
         tags += [name for name, rx in COUNTRY_TAGS if rx.search(f"{title} {text[:300]}") or item.get("country") == name]
-        log(f"[prueba] publicaría ({', '.join(tags)}){' ★' if featured else ''}: {title} <- {article_url}")
+        log(f"[prueba] publicaría ({', '.join(tags)}): {title} <- {article_url}")
         known.append(title)
         return True
     source_title = title
@@ -928,18 +965,14 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
         try:
             written = writer.write_article(sources, inmigracion=force_inmig, log=log)
         except Exception as e:
-            log(f"writer fail, extractivo {title}: {e}")
-    if written:
-        title = written["headline"]
-        body = written["html"]
-        excerpt = written["deck"]
-    else:
-        try:
-            body = write_html(title, text, item.get("source") or "", article_url)
-        except ValueError as e:
-            log(f"skip write {title}: {e}")
-            return False
-        excerpt = excerpt_es(text, title)
+            log(f"writer fail {title}: {e}")
+    if not written:
+        # Sin redacción no se publica: el resumen extractivo deja notas sin desarrollo.
+        log(f"skip sin desarrollo: {title}")
+        return False
+    title = written["headline"]
+    body = written["html"]
+    excerpt = written["deck"]
 
     tags = classify(source_title, text, force_inmig)
     slug_tag = primary_slug(tags)
@@ -961,20 +994,11 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
         if img_url and caption:
             body += f"\n<p><em>{html.escape(caption)}</em></p>"
 
-    if written:
-        # Redacción original: indexable. Las frases sin sustento ya se eliminaron; #revisar solo
-        # la pone en la cola de revisión humana.
-        internal = [{"name": IA_TAG}]
-        if written["flagged"]:
-            internal.append({"name": REVIEW_TAG})
-            writer.queue_for_review(
-                written,
-                clean_source_url(article_url),
-                "fuentes escasas" if written["thin_sources"] else "afirmaciones sin sustento",
-            )
-    else:
-        # Texto extractivo de la fuente: no indexable hasta que la redacción lo reescriba.
-        internal = [{"name": AUTO_TAG}]
+    # Las frases sin sustento ya se eliminaron; #revisar solo la pone en la cola de revisión humana.
+    internal = [{"name": IA_TAG}]
+    if written["flagged"]:
+        internal.append({"name": REVIEW_TAG})
+        writer.queue_for_review(written, clean_source_url(article_url), "afirmaciones sin sustento")
 
     payload = {
         "posts": [
@@ -986,7 +1010,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, featured: bool, kn
                 "meta_description": smart_cut(excerpt, 155),
                 "html": body,
                 "status": "published",
-                "featured": featured,
+                "featured": False,
                 "tags": [{"name": t} for t in tags] + internal,
                 "feature_image": img_url,
                 "feature_image_caption": caption,
@@ -1032,19 +1056,17 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
         extra["desc"] = extract_article(extra["url"])[:500]
         if len(extra["desc"]) < 280:
             continue
-        if publish_item(ghost, extra, True, featured=False, known=known, state=state):
+        if publish_item(ghost, extra, True, known=known, state=state):
             published += 1
             if published >= max_inmig:
                 break
 
     inmig = collect(True, 16)
-    first = published == 0
     for item in inmig:
         if published >= max_inmig:
             break
-        if publish_item(ghost, item, True, featured=first, known=known, state=state):
+        if publish_item(ghost, item, True, known=known, state=state):
             published += 1
-            first = False
 
     general_ok = 0
     for item in collect(False, 18):
@@ -1052,7 +1074,7 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
             break
         if INMIG_RE.search(item["title"]):
             continue
-        if publish_item(ghost, item, False, featured=False, known=known, state=state):
+        if publish_item(ghost, item, False, known=known, state=state):
             general_ok += 1
             published += 1
 
@@ -1061,7 +1083,7 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
         if paises_ok >= max_paises:
             break
         item["require_body"] = True
-        if publish_item(ghost, item, bool(INMIG_RE.search(item["title"])), featured=False, known=known, state=state):
+        if publish_item(ghost, item, bool(INMIG_RE.search(item["title"])), known=known, state=state):
             paises_ok += 1
             published += 1
 

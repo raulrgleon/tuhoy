@@ -45,7 +45,7 @@ TZ = ZoneInfo("America/Chicago")
 QUEUE = ROOT / "data" / "x_queue.json"
 EDITION_HOURS = [6, 12, 18]
 LAST_POST_HOUR = 23  # no se programan posts más tarde
-SKIP_TAGS = {daily.AUTO_TAG, daily.REVIEW_TAG}
+SKIP_TAGS = {daily.AUTO_TAG}
 URL_LEN = 23  # X cuenta cualquier enlace como 23 caracteres
 MAX_LEN = 280
 

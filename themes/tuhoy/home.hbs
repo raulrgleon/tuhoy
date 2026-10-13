@@ -17,7 +17,8 @@
 {{/get}}
 
 <div class="th-wrap">
-    {{#get "posts" filter="featured:true" limit="4" include="tags,authors"}}
+    {{!-- Destacar o editar una nota la sube: la última que destaques abre la portada. --}}
+    {{#get "posts" filter="featured:true" limit="4" order="updated_at desc" include="tags,authors"}}
     <section class="th-lead-grid" aria-label="Apertura">
         {{#foreach posts limit="1"}}
             {{> "story-lead"}}

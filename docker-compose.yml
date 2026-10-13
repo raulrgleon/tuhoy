@@ -4,7 +4,7 @@
 
 services:
   ghost:
-    image: ghost:5
+    image: ghost:6.69.0
     restart: unless-stopped
     depends_on:
       mysql:

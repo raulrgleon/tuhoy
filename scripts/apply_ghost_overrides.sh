@@ -22,7 +22,8 @@ fi
 
 croot="/proc/$pid/root"
 ghost="$croot$(readlink "$croot/var/lib/ghost/current")"
-templates="$ghost/core/server/services/mail/templates"
+templates="$ghost/core/server/lib/mail/templates"          # Ghost 6
+[ -d "$templates" ] || templates="$ghost/core/server/services/mail/templates"  # Ghost 5
 src="$ROOT/ghost-overrides/mail/invite-user.html"
 
 changed=0
@@ -37,15 +38,18 @@ done
 
 # El asunto de la invitación está en el código de Ghost y se carga al arrancar:
 # si hay que parchearlo, se reinicia Ghost (SIGTERM; Docker lo levanta con restart: unless-stopped).
-invites="$ghost/core/server/services/invites/Invites.js"
+invites="$ghost/core/server/services/invites/invites.js"          # Ghost 6
+[ -f "$invites" ] || invites="$ghost/core/server/services/invites/Invites.js"  # Ghost 5
 role_changed=0
 if ! grep -q 'TUHOY_EMAIL_ROLE_V1' "$invites"; then
     python3 "$ROOT/scripts/patch_invite_permissions.py" "$invites"
     node --check < "$invites" || { cp "$invites.tuhoy-before-role" "$invites"; exit 1; }
     role_changed=1
 fi
-# El directorio externo bloquea iframes; abrir Explore en una pestaña nueva.
-python3 "$ROOT/scripts/patch_explore_link.py" "$ghost/core/built/admin/assets"
+# Ghost 5 abría Explore en un iframe que el directorio externo bloquea; Ghost 6 ya usa un enlace normal.
+if grep -qs 'openExploreWindow' "$ghost"/core/built/admin/assets/ghost-*.js; then
+    python3 "$ROOT/scripts/patch_explore_link.py" "$ghost/core/built/admin/assets"
+fi
 
 SUBJECT="Te invitamos a unirte a {blogName}"
 if [ "$role_changed" = 1 ] || grep -q -e "has invited you to join {blogName}" -e "You have been invited to join {blogName}" "$invites"; then
