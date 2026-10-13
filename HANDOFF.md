@@ -5,6 +5,7 @@
 - Raul ligó @tuhoynoticias a la página Facebook TuHoy. Graph confirma `instagram_business_account` id **17841472487834968** / username tuhoynoticias. App TuHoy Publicador: caso de uso «Administrar mensajes y contenido en Instagram». Token de página renovado (sin caducidad) con `instagram_basic` + `instagram_content_publish` además de los de Facebook, autorizado solo a página TuHoy, BM TuHoy y cuenta tuhoynoticias.
 - Primer post 13-oct 14:29 Chicago: id Graph `18113286848606782`, permalink https://www.instagram.com/p/Decj_SNjrUU/ (nota del campo / inmigrantes). Una por pasada, nada con más de 2 h de retraso.
 - Foto de perfil de Instagram: el navegador no puede subir archivos; Raul puede ponerla desde el móvil.
+- Enlace social en la página de Facebook TuHoy: Instagram **tuhoynoticias** (público, instagram.com/tuhoynoticias). Dirección física vacía. La URL de Facebook sigue siendo `profile.php?id=61595145640166` (aún sin nombre corto).
 
 ## Checkpoint plan para llegar a más personas, semana 1 (2026-10-13 · Cursor/Claude)
 - Raul pidió un plan para llegar a más gente y eligió hacer «todo lo de esta semana». Punto de partida: 2 suscriptores (Raul y un lector), Facebook con 0 seguidores y 10–50 visitas reales al día (Cloudflare Web Analytics, que ya estaba activa desde el 29-sep).
