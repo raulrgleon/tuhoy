@@ -1,3 +1,8 @@
+## Checkpoint docs alineados al vivo (2026-10-13 ~15:15 Chicago · Cursor)
+- Rechequeo: `/noticias-google/` 200 (100 notas), `/news-sitemap.xml` → 301 a esa ruta, `facebook.com/tuhoynoticias` 200, tuhoy.com enlaza esa URL, `/venezuela/` 200.
+- HANDOFF del estudio, README ya en `64aec40`, `.env.example` (URL pública de Facebook) y canvas `tuhoy-estudio.canvas.tsx` coinciden con eso. Search Console: falta enviar `https://tuhoy.com/noticias-google/`.
+- Workspace repo-tuhoy no se pudo actualizar: workspace.dnet.llc pide login y no hay sesión ni acceso a Postgres.
+
 ## Checkpoint Facebook tuhoynoticias + sitemap Google News (2026-10-13 ~15:10 Chicago · Cursor)
 - Página de Facebook: usuario **tuhoynoticias**. Pública: https://www.facebook.com/tuhoynoticias (Graph `username` confirmado). Tema 1.5.2 y boletín apuntan ahí. No guardar la contraseña de Facebook en el repo ni en memoria.
 - Mapa Google News: Ghost 6 intercepta `*.xml` como archivo estático (`File not found`). Ruta nueva **`/noticias-google/`** (XML, 100 notas). Cloudflare 301 desde `/news-sitemap.xml` y `/news-sitemap.xml/` (ruleset `6e2b45f196854712b208b16e9c8e8392`). `/venezuela/` sigue 200.
@@ -5,9 +10,9 @@
 ## Checkpoint estudio completo (2026-10-13 ~15:00 Chicago · Cursor)
 - Pedido de Raul: revisar sitio, publicaciones, envíos, recibos y colaboradores. Canvas: `tuhoy-estudio.canvas.tsx`.
 - **En marcha:** Ghost 6.69.0 200; ediciones 06 y 12 de hoy con 5 notas y foto cada una; `X_MODE`/`FB_MODE`/`IG_MODE`=api publicando 1/pasada; Brevo transaccional; Mailgun `mg.tuhoy.com` listo; articulos@ timer activo; invitaciones ES aplicadas; 22 tests OK.
-- **Hallazgo alto:** `/news-sitemap.xml/` 404 (File not found) aunque `routes.yaml` lo declara y `/venezuela/` sí carga.
-- **Medio:** Ghost timezone `America/New_York` vs cron Chicago; 60 notas `#revisar`; primer boletín real 14-oct 07:00 a 2 suscriptores.
-- **Bajo:** Facebook sin vanity (`profile.php?id=61595145640166`; `tuhoynoticias` libre, falta contraseña); IMAP TimeoutError esporádico; `pendientes` de X no se limpian tras `tweet_id`.
+- **Resuelto 15:10:** `/news-sitemap.xml/` 404 → **`/noticias-google/`** 200 (100 notas, text/xml) + Cloudflare 301. Facebook vanity **https://www.facebook.com/tuhoynoticias**.
+- **Medio (sigue):** Ghost timezone `America/New_York` vs cron Chicago; 60 notas `#revisar`; primer boletín real 14-oct 07:00 a 2 suscriptores.
+- **Bajo (sigue):** IMAP TimeoutError esporádico; `pendientes` de X no se limpian tras `tweet_id`.
 - Colaboradores: Raul Owner; Kastle/Tatiana/Richard Contributor. Kastle publicó (vía correo + confirmación) el ciberataque en Francia. YouTube aplazado.
 
 ## Checkpoint Instagram @tuhoynoticias (2026-10-13 · Cursor)
