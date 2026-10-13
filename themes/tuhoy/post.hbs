@@ -24,6 +24,18 @@
                 <span>{{reading_time minute="1 min de lectura" minutes="% min de lectura"}}</span>
             </div>
             <div class="th-share" aria-label="Compartir esta noticia">
+                <a class="th-share-button th-share-wa" href="https://wa.me/?text={{encode title}}%20{{encode url absolute="true"}}" target="_blank" rel="noopener" aria-label="Compartir por WhatsApp">
+                    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.6-.3Z"/></svg>
+                    WhatsApp
+                </a>
+                <a class="th-share-button" href="https://www.facebook.com/sharer/sharer.php?u={{encode url absolute="true"}}" target="_blank" rel="noopener" aria-label="Compartir en Facebook">
+                    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path fill="currentColor" d="M13.5 21v-7.5H16l.4-3h-2.9V8.6c0-.9.3-1.5 1.5-1.5h1.5V4.4a20 20 0 0 0-2.2-.1c-2.2 0-3.7 1.3-3.7 3.8v2.4H8.1v3h2.5V21h2.9Z"/></svg>
+                    Facebook
+                </a>
+                <a class="th-share-button" href="https://x.com/intent/post?text={{encode title}}&url={{encode url absolute="true"}}&via=TuHoy_" target="_blank" rel="noopener" aria-label="Compartir en X">
+                    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M17.8 3h3l-6.6 7.6L22 21h-6.1l-4.8-6.3L5.6 21h-3l7.1-8.1L2.2 3h6.2l4.4 5.8L17.8 3Zm-1 16.2h1.7L7.3 4.7H5.5l11.3 14.5Z"/></svg>
+                    X
+                </a>
                 <button class="th-share-button" type="button" data-share-native data-share-title="{{title}}" aria-label="Compartir noticia">
                     <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M10 13.5V3m0 0L6.5 6.5M10 3l3.5 3.5M4 10.5V16h12v-5.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
                     Compartir
@@ -61,6 +73,19 @@
                 <p>Mándanos tu aviso, foto o denuncia por WhatsApp. Si nos pides reserva, protegemos tu identidad.</p>
                 <a class="th-btn th-tip-btn" href="https://wa.me/14028240388?text={{encode "Hola TuHoy, quiero enviarles un aviso:"}}" target="_blank" rel="noopener">WhatsApp (402) 824-0388</a>
             </aside>
+            {{#unless @member}}
+            <aside class="th-subscribe" aria-label="Suscríbete al boletín">
+                <p class="th-subscribe-title">Lo que importa hoy, en tu correo</p>
+                <p>Cada mañana, las noticias principales en español. Gratis y sin spam: te das de baja con un clic.</p>
+                <form class="th-subscribe-form" data-members-form="signup">
+                    <input data-members-email type="email" required placeholder="Tu correo electrónico" aria-label="Tu correo electrónico">
+                    <button class="th-btn" type="submit">Suscribirme</button>
+                    <p class="th-subscribe-msg th-subscribe-ok">¡Listo! Revisa tu correo para confirmar la suscripción.</p>
+                    <p class="th-subscribe-msg th-subscribe-err">No se pudo completar. Revisa el correo e inténtalo otra vez.</p>
+                </form>
+            </aside>
+            {{/unless}}
+            <p class="th-follow">Síguenos en <a href="https://www.facebook.com/profile.php?id=61595145640166" target="_blank" rel="noopener">Facebook</a> y en <a href="https://x.com/TuHoy_" target="_blank" rel="noopener">X</a>.</p>
         </div>
         <aside class="th-rail" aria-label="Más noticias">
             <p class="th-section-name">Últimas</p>

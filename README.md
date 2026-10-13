@@ -13,6 +13,7 @@ La edición diaria automática la firma **Raul Garcia**. Los artículos enviados
 - [Redacción (writer.py)](#redacción-writerpy)
 - [Posts diarios en X](#posts-diarios-en-x-tuhoy_)
 - [Página de Facebook](#página-de-facebook-tuhoy)
+- [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)
 - [Scripts](#scripts)
 - [Tema](#tema)
 - [SEO y Google News](#seo-y-google-news)
@@ -32,6 +33,8 @@ cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin AP
                                      ├─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
                                      └─► scripts/x_posts.py ──► un post en X por nota (@TuHoy_)
                                               └─► scripts/facebook_posts.py ──► el mismo post en la página de Facebook TuHoy
+cron 07 h Chicago ──► scripts/daily_digest.py ──► Ghost + Mailgun ──► boletín «Lo que importa hoy» a los suscriptores
+cron cada hora    ──► scripts/indexnow.py ──► IndexNow (Bing, Yandex…) con las notas nuevas
 
 Correo saliente:  Ghost ──► Brevo SMTP (info@tuhoy.com)
 Correo entrante:  info@tuhoy.com ──► Cloudflare Email Routing ──► raulrgleon@gmail.com
@@ -72,6 +75,8 @@ Todas viven en `.env` (permisos `600`, ignorado por git). Plantilla: [`.env.exam
 | `LLM_FACTCHECK` | `1` (por defecto) activa la pasada de verificación de hechos |
 | `X_*` | Posts de X (ver [Posts diarios en X](#posts-diarios-en-x-tuhoy_)) |
 | `FB_MODE`, `FB_PAGE_ID`, `FB_PAGE_TOKEN` | Página de Facebook (ver [Página de Facebook](#página-de-facebook-tuhoy)) |
+| `DIGEST_MODE`, `DIGEST_POSTS`, `DIGEST_MIN`, `DIGEST_NEWSLETTER` | Boletín diario (ver [Boletín diario](#boletín-diario-y-crecimiento)) |
+| `INDEXNOW_KEY` | Clave pública de IndexNow, servida por el Worker `tuhoy-indexnow` |
 
 En Coolify, las variables del contenedor se editan en TuHoy Ghost → Environment Variables.
 
@@ -102,7 +107,7 @@ python3 scripts/daily_edition.py --dry-run            # muestra qué publicaría
 python3 scripts/daily_edition.py --inmig 2 --general 2 --paises 1   # una edición a mano
 ```
 
-Instalar o reinstalar el cron (edición + posts de X + plantillas de Ghost):
+Instalar o reinstalar el cron (edición, posts de X y Facebook, boletín, IndexNow y plantillas de Ghost):
 
 ```bash
 bash scripts/install_daily_cron.sh
@@ -185,6 +190,28 @@ python3 scripts/facebook_posts.py             # publica lo que toca
 
 Logs: `logs/facebook.log` y `logs/facebook-errors.log`.
 
+## Boletín diario y crecimiento
+
+Punto de partida (13-oct-2026): 2 suscriptores, página de Facebook recién creada y entre 10 y 50 visitas reales al día según Cloudflare Web Analytics. Las cifras de «visitantes» del panel de tráfico de Cloudflare (~550/día) incluyen sobre todo robots.
+
+**Boletín «Lo que importa hoy».** [`scripts/daily_digest.py`](scripts/daily_digest.py) sale a las **07:00 Chicago**, después de la edición de las 06:00. Crea en Ghost un post de **solo correo**: no aparece en la web y lleva la etiqueta interna `#boletin`. Ghost lo envía con Mailgun (`mg.tuhoy.com`) a todos los suscriptores de la newsletter `default-newsletter`.
+
+- Elige hasta `DIGEST_POSTS` notas (6) de las últimas 24 horas, con foto y sin `#resumen-automatico`. Las secciones se turnan, empezando por Inmigración, con un máximo de 3 por sección.
+- Solo la primera nota lleva foto; las demás, titular, entradilla y enlace. Al final pide suscribirse y seguir en Facebook, X y WhatsApp.
+- Un boletín por día como máximo (`data/digest_state.json`), y ninguno si hay menos de `DIGEST_MIN` notas (3). Solo actúa con `DIGEST_MODE=on`.
+- Las integraciones de Ghost no pueden enviar vistas previas, así que `--test` hace un envío real filtrado por la etiqueta de miembro `prueba-boletin`, que solo lleva el correo indicado.
+
+```bash
+python3 scripts/daily_digest.py --dry-run                  # notas elegidas y HTML, sin crear nada
+python3 scripts/daily_digest.py --test raulrgleon@gmail.com # prueba solo a ese suscriptor
+```
+
+**Captación en la web (tema 1.5.0).** Cada nota tiene botones para compartir por WhatsApp, Facebook y X (además de «Compartir» y «Copiar enlace»). Al final de la nota hay una caja de suscripción «Lo que importa hoy, en tu correo», que no ven los ya suscritos, y enlaces a Facebook y X. El pie enlaza también a la página de Facebook.
+
+**Buscadores.** [`scripts/indexnow.py`](scripts/indexnow.py) avisa cada hora por IndexNow (Bing, que alimenta a DuckDuckGo, Yahoo y ChatGPT, además de Yandex, Seznam y Naver) de las notas publicadas que aún no se avisaron (`data/indexnow_state.json`). La clave se sirve en `https://tuhoy.com/<INDEXNOW_KEY>.txt` desde el Worker de Cloudflare `tuhoy-indexnow`, en la ruta `tuhoy.com/<clave>.txt`. Google no usa IndexNow: lee los sitemaps enviados en Search Console. Google News ya no admite altas manuales en Publisher Center; incluye los sitios de forma automática según su contenido.
+
+Logs: `logs/digest.log` y `logs/indexnow.log`.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -202,8 +229,10 @@ Logs: `logs/facebook.log` y `logs/facebook-errors.log`.
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
 | [`x_posts.py`](scripts/x_posts.py) | Escribe y programa un post de X por cada nota nueva tras cada edición |
 | [`facebook_posts.py`](scripts/facebook_posts.py) | Publica los mismos posts en la página de Facebook TuHoy a su hora |
+| [`daily_digest.py`](scripts/daily_digest.py) | Envía el boletín diario «Lo que importa hoy» a las 07:00 Chicago |
+| [`indexnow.py`](scripts/indexnow.py) | Avisa a Bing y otros buscadores (IndexNow) de las notas nuevas, cada hora |
 | [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost y traduce el asunto de la invitación |
-| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, de los posts de X y Facebook y de las plantillas de correo |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, los posts de X y Facebook, el boletín, IndexNow y las plantillas de correo |
 
 Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
@@ -217,7 +246,7 @@ python3 scripts/upload_theme.py   # empaqueta, sube y activa el tema
 
 También se puede subir el ZIP a mano en Ghost → Settings → Design → Change theme → Upload theme.
 
-Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a @TuHoy_ en X y al WhatsApp/teléfono del diario, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, la meta `twitter:site` y la meta de verificación de Search Console.
+Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a @TuHoy_ en X y al WhatsApp/teléfono del diario, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, botones para compartir y caja de suscripción (ver [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)), la meta `twitter:site` y la meta de verificación de Search Console.
 
 ### Portada
 
@@ -264,6 +293,8 @@ El reenvío de Namecheap no sirve porque el dominio usa los nameservers de Cloud
 - DNS, HTTPS y túnel (`DNET-HOME`) para `tuhoy.com`.
 - El origen recibe HTTP. Si Ghost (`url=https://tuhoy.com`) no sabe que la petición original era HTTPS, redirige en bucle (`ERR_TOO_MANY_REDIRECTS`). Las etiquetas Traefik del compose mandan `X-Forwarded-Proto: https`. Deja apagado el redirect HTTP→HTTPS de Coolify.
 - Registros MX: `route1/2/3.mx.cloudflare.net` (los gestiona Email Routing; no los edites a mano).
+- **Web Analytics** (sitio `c754ddb163c14a26b2a9a6294ef09087`, instalación automática): mide las visitas reales, sin robots. Panel en Cloudflare → Analytics & Logs → Web Analytics.
+- **Worker `tuhoy-indexnow`:** solo responde la clave de IndexNow en `tuhoy.com/<clave>.txt`; no toca el resto del sitio.
 
 ## Copias de seguridad
 

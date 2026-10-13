@@ -11,9 +11,13 @@ X_DUE="*/15 * * * * $PY $DIR/scripts/x_posts.py --post-due > /dev/null 2>> $DIR/
 # Facebook publica los mismos posts a su hora (solo si FB_MODE=api en .env).
 FB_DUE="*/15 * * * * $PY $DIR/scripts/facebook_posts.py > /dev/null 2>> $DIR/logs/facebook-errors.log"
 OVERRIDES="*/10 * * * * $DIR/scripts/apply_ghost_overrides.sh >> $DIR/logs/overrides.log 2>&1"
+# Boletín «Lo que importa hoy» a las 07 de Chicago, tras la edición de las 06 (solo si DIGEST_MODE=on).
+DIGEST="0 * * * * case \"\$(TZ=America/Chicago date +\\%H)\" in 07) $PY $DIR/scripts/daily_digest.py > /dev/null 2>> $DIR/logs/digest-errors.log;; esac"
+# Aviso a Bing y demás buscadores (IndexNow) de las notas nuevas, cada hora (solo si hay INDEXNOW_KEY).
+INDEXNOW="5 * * * * $PY $DIR/scripts/indexnow.py > /dev/null 2>> $DIR/logs/indexnow-errors.log"
 mkdir -p $DIR/logs $DIR/data
-chmod 755 $DIR/scripts/daily_edition.py $DIR/scripts/x_posts.py $DIR/scripts/facebook_posts.py $DIR/scripts/apply_ghost_overrides.sh
-(crontab -l 2>/dev/null | grep -v -e 'tuhoy/scripts/daily_edition.py' -e 'tuhoy/scripts/x_posts.py' -e 'tuhoy/scripts/facebook_posts.py' -e 'tuhoy/scripts/apply_ghost_overrides.sh' || true
- echo "$EDITION"; echo "$X_DUE"; echo "$FB_DUE"; echo "$OVERRIDES") | crontab -
+chmod 755 $DIR/scripts/daily_edition.py $DIR/scripts/x_posts.py $DIR/scripts/facebook_posts.py $DIR/scripts/daily_digest.py $DIR/scripts/indexnow.py $DIR/scripts/apply_ghost_overrides.sh
+(crontab -l 2>/dev/null | grep -v -e 'tuhoy/scripts/daily_edition.py' -e 'tuhoy/scripts/x_posts.py' -e 'tuhoy/scripts/facebook_posts.py' -e 'tuhoy/scripts/daily_digest.py' -e 'tuhoy/scripts/indexnow.py' -e 'tuhoy/scripts/apply_ghost_overrides.sh' || true
+ echo "$EDITION"; echo "$X_DUE"; echo "$FB_DUE"; echo "$DIGEST"; echo "$INDEXNOW"; echo "$OVERRIDES") | crontab -
 echo "cron instalado:"
 crontab -l

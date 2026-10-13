@@ -713,6 +713,31 @@ button:focus-visible {
 .th-article-body .th-tip .th-tip-title { font-weight: 700; font-size: 1.08em; margin-bottom: .35em; }
 .th-article-body .th-tip a.th-tip-btn { text-decoration: none; color: #fff; }
 .th-article-body .th-tip a.th-tip-btn:hover { color: #fff; }
+.th-article-body .th-subscribe {
+    padding: 1.1em 1.2em 1.2em;
+    background: var(--color-bg-soft);
+    font-family: var(--font-sans);
+    font-size: 0.82em;
+}
+.th-article-body .th-subscribe p { margin: 0 0 .7em; }
+.th-article-body .th-subscribe .th-subscribe-title { font-family: var(--font-serif); font-weight: 700; font-size: 1.3em; margin-bottom: .3em; }
+.th-subscribe-form { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.th-subscribe-form input {
+    flex: 1 1 220px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--color-rule);
+    border-radius: var(--radius-sm);
+    background: #fff;
+    font: inherit;
+}
+.th-subscribe-form .th-subscribe-msg { display: none; flex-basis: 100%; margin: 0; }
+.th-subscribe-form.success .th-subscribe-ok,
+.th-subscribe-form.error .th-subscribe-err { display: block; }
+.th-subscribe-form.success input,
+.th-subscribe-form.success button { display: none; }
+.th-subscribe-form.loading button { opacity: .6; }
+.th-article-body .th-follow { font-family: var(--font-sans); font-size: 0.8em; color: var(--color-text-3); }
 .th-article-body em { font-style: italic; }
 .th-article-body pre {
     max-width: 100%;

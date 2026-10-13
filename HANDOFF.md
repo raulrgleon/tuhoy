@@ -1,3 +1,11 @@
+## Checkpoint plan para llegar a más personas, semana 1 (2026-10-13 · Cursor/Claude)
+- Raul pidió un plan para llegar a más gente y eligió hacer «todo lo de esta semana». Punto de partida: 2 suscriptores (Raul y un lector), Facebook con 0 seguidores y 10–50 visitas reales al día (Cloudflare Web Analytics, que ya estaba activa desde el 29-sep).
+- Tema 1.5.0: botones de WhatsApp, Facebook y X en cada nota; caja de suscripción `data-members-form="signup"` al final (oculta para miembros); enlaces a la página de Facebook en la nota y el pie.
+- `scripts/daily_digest.py`: boletín «Lo que importa hoy» a las 07:00 Chicago como post de solo correo (`#boletin`) por Ghost + Mailgun. `DIGEST_MODE=on` en `.env`. Prueba enviada y entregada solo a Raul (post `6ace6f25099bf60001e24501`, segmento `label:prueba-boletin`). El primer envío real sale el 14-oct a las 07:00.
+- `scripts/indexnow.py` + Worker de Cloudflare `tuhoy-indexnow` (ruta `tuhoy.com/<clave>.txt`, id de ruta `21fe2733dff04632b0c148828397028a`). Se avisaron las 139 notas (202). Cron cada hora a los :05.
+- No se pudo: activar Crawler Hints (la API no lo permite con la clave global y el panel pide iniciar sesión) ni dar de alta en Bing Webmaster (pide iniciar sesión; IndexNow cubre la indexación). Google News ya no admite altas manuales.
+- Pendiente de los pasos siguientes del plan: Instagram automático, canal de WhatsApp, guías propias de inmigración, noticias locales y promoción pagada opcional.
+
 ## Checkpoint notas sin foto (2026-10-13 · Cursor/Claude)
 - Problema: 4 notas publicadas sin portada, así que Facebook (y X) mostraban el logo. Tres eran de Univision, que sirve sus fotos en AVIF: Ghost 6 las rechaza (415) y `source_photo` las etiquetaba como JPEG. La cuarta (`voz-baja-...`) tenía como fuente businesswire, que da 403.
 - Pillow 12.3.0 instalado para raul en `~/.local/lib/python3.14/site-packages` (wheel descomprimido, sin pip en el servidor). El cron usa `/usr/bin/python3` como raul, así que lo ve.

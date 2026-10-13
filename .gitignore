@@ -22,3 +22,5 @@ data/fb_queue.json
 
 # Correos, códigos de confirmación y estado privados
 data/mail-private/
+data/digest_state.json
+data/indexnow_state.json
