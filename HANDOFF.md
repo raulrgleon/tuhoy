@@ -1,3 +1,7 @@
+## Checkpoint Facebook tuhoynoticias + sitemap Google News (2026-10-13 ~15:10 Chicago · Cursor)
+- Página de Facebook: usuario **tuhoynoticias**. Pública: https://www.facebook.com/tuhoynoticias (Graph `username` confirmado). Tema 1.5.2 y boletín apuntan ahí. No guardar la contraseña de Facebook en el repo ni en memoria.
+- Mapa Google News: Ghost 6 intercepta `*.xml` como archivo estático (`File not found`). Ruta nueva **`/noticias-google/`** (XML, 100 notas). Cloudflare 301 desde `/news-sitemap.xml` y `/news-sitemap.xml/` (ruleset `6e2b45f196854712b208b16e9c8e8392`). `/venezuela/` sigue 200.
+
 ## Checkpoint estudio completo (2026-10-13 ~15:00 Chicago · Cursor)
 - Pedido de Raul: revisar sitio, publicaciones, envíos, recibos y colaboradores. Canvas: `tuhoy-estudio.canvas.tsx`.
 - **En marcha:** Ghost 6.69.0 200; ediciones 06 y 12 de hoy con 5 notas y foto cada una; `X_MODE`/`FB_MODE`/`IG_MODE`=api publicando 1/pasada; Brevo transaccional; Mailgun `mg.tuhoy.com` listo; articulos@ timer activo; invitaciones ES aplicadas; 22 tests OK.
@@ -13,7 +17,7 @@
 - Raul ligó @tuhoynoticias a la página Facebook TuHoy. Graph confirma `instagram_business_account` id **17841472487834968** / username tuhoynoticias. App TuHoy Publicador: caso de uso «Administrar mensajes y contenido en Instagram». Token de página renovado (sin caducidad) con `instagram_basic` + `instagram_content_publish` además de los de Facebook, autorizado solo a página TuHoy, BM TuHoy y cuenta tuhoynoticias.
 - Primer post 13-oct 14:29 Chicago: id Graph `18113286848606782`, permalink https://www.instagram.com/p/Decj_SNjrUU/ (nota del campo / inmigrantes). Una por pasada, nada con más de 2 h de retraso.
 - Foto de perfil de Instagram: el navegador no puede subir archivos; Raul puede ponerla desde el móvil.
-- Enlace social en la página de Facebook TuHoy: Instagram **tuhoynoticias** (público, instagram.com/tuhoynoticias). Dirección física vacía. La URL de Facebook sigue siendo `profile.php?id=61595145640166` (aún sin nombre corto).
+- Enlace social en la página de Facebook TuHoy: Instagram **tuhoynoticias**. URL de Facebook: **facebook.com/tuhoynoticias**. Dirección física vacía.
 
 ## Checkpoint plan para llegar a más personas, semana 1 (2026-10-13 · Cursor/Claude)
 - Raul pidió un plan para llegar a más gente y eligió hacer «todo lo de esta semana». Punto de partida: 2 suscriptores (Raul y un lector), Facebook con 0 seguidores y 10–50 visitas reales al día (Cloudflare Web Analytics, que ya estaba activa desde el 29-sep).

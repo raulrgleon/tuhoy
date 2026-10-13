@@ -9,7 +9,7 @@ routes:
     filter: tag:cuba
     template: tag
     data: tag.cuba
-  /news-sitemap.xml/:
+  /noticias-google/:
     template: sitemap-news
     content_type: text/xml
 

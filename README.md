@@ -166,7 +166,7 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 
 ## Página de Facebook (TuHoy)
 
-[`scripts/facebook_posts.py`](scripts/facebook_posts.py) publica en la [página TuHoy](https://www.facebook.com/profile.php?id=1408807572318535) (ID `1408807572318535`) **los mismos posts que X, a la misma hora**, con el enlace a la nota: Facebook arma la vista previa con la foto y el titular. No llama al modelo ni escribe textos propios: lee `data/x_queue.json` (solo lectura) y apunta lo publicado en `data/fb_queue.json`.
+[`scripts/facebook_posts.py`](scripts/facebook_posts.py) publica en la [página TuHoy](https://www.facebook.com/tuhoynoticias) (ID `1408807572318535`) **los mismos posts que X, a la misma hora**, con el enlace a la nota: Facebook arma la vista previa con la foto y el titular. No llama al modelo ni escribe textos propios: lee `data/x_queue.json` (solo lectura) y apunta lo publicado en `data/fb_queue.json`.
 
 - Corre cada 15 minutos desde el cron y solo actúa si `FB_MODE=api`.
 - Para no dar sobresaltos publica como mucho **un post por pasada** y nunca los que llevan más de 2 horas de retraso.
@@ -226,7 +226,7 @@ python3 scripts/daily_digest.py --dry-run                  # notas elegidas y HT
 python3 scripts/daily_digest.py --test raulrgleon@gmail.com # prueba solo a ese suscriptor
 ```
 
-**Captación en la web (tema 1.5.1).** Cada nota tiene botones para compartir por WhatsApp, Facebook y X (además de «Compartir» y «Copiar enlace»). Al final de la nota hay una caja de suscripción «Lo que importa hoy, en tu correo», que no ven los ya suscritos, y enlaces a Facebook, Instagram y X. El pie enlaza también a la página de Facebook y a [@tuhoynoticias](https://www.instagram.com/tuhoynoticias/).
+**Captación en la web (tema 1.5.2).** Cada nota tiene botones para compartir por WhatsApp, Facebook y X (además de «Compartir» y «Copiar enlace»). Al final de la nota hay una caja de suscripción «Lo que importa hoy, en tu correo», que no ven los ya suscritos, y enlaces a Facebook (`facebook.com/tuhoynoticias`), Instagram y X. El pie enlaza también a la página de Facebook y a [@tuhoynoticias](https://www.instagram.com/tuhoynoticias/).
 
 **Buscadores.** [`scripts/indexnow.py`](scripts/indexnow.py) avisa cada hora por IndexNow (Bing, que alimenta a DuckDuckGo, Yahoo y ChatGPT, además de Yandex, Seznam y Naver) de las notas publicadas que aún no se avisaron (`data/indexnow_state.json`). La clave se sirve en `https://tuhoy.com/<INDEXNOW_KEY>.txt` desde el Worker de Cloudflare `tuhoy-indexnow`, en la ruta `tuhoy.com/<clave>.txt`. Google no usa IndexNow: lee los sitemaps enviados en Search Console. Google News ya no admite altas manuales en Publisher Center; incluye los sitios de forma automática según su contenido.
 
@@ -280,10 +280,10 @@ Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces leg
 
 ## SEO y Google News
 
-- **Rutas:** [`routes.yaml`](routes.yaml) publica `/news-sitemap.xml/` con la plantilla `sitemap-news`. Ghost reserva `/sitemap-*.xml`, por eso no se llama `sitemap-news.xml`.
-- **Subir rutas:** `python3 scripts/upload_routes.py`. Si Ghost responde 403/501 con la clave de integración, súbelo en Ghost → Settings → Labs → Routes.
-- **Sitemaps:** `https://tuhoy.com/sitemap.xml` (de Ghost) y `https://tuhoy.com/news-sitemap.xml` (las 100 notas más recientes, sin las de resumen extractivo `#resumen-automatico`).
-- **Search Console:** propiedad de prefijo de URL `https://tuhoy.com/`, verificada con meta tag en el tema. Ambos sitemaps están enviados.
+- **Rutas:** [`routes.yaml`](routes.yaml) publica `/noticias-google/` con la plantilla `sitemap-news` (XML). En Ghost 6 un path `*.xml` lo come el middleware de archivos estáticos y responde `File not found` antes de las rutas; por eso no usamos `/news-sitemap.xml/`. Cloudflare redirige esa URL antigua a `/noticias-google/`.
+- **Subir rutas:** `python3 scripts/upload_routes.py`. Si Ghost responde 403/501 con la clave de integración, copiar `routes.yaml` a `content/settings/routes.yaml` del volumen y reiniciar Ghost.
+- **Sitemaps:** `https://tuhoy.com/sitemap.xml` (de Ghost) y `https://tuhoy.com/noticias-google/` (las 100 notas más recientes, sin `#resumen-automatico`).
+- **Search Console:** propiedad de prefijo de URL `https://tuhoy.com/`, verificada con meta tag en el tema. Enviar el sitemap `https://tuhoy.com/noticias-google/`.
 
 ## Contacto del diario
 

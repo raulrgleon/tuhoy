@@ -34,7 +34,7 @@ SKIP_TAGS = {"#resumen-automatico", TAG}
 DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
          "septiembre", "octubre", "noviembre", "diciembre"]
-FACEBOOK = "https://www.facebook.com/profile.php?id=61595145640166"
+FACEBOOK = "https://www.facebook.com/tuhoynoticias"
 INSTAGRAM = "https://www.instagram.com/tuhoynoticias/"
 
 
