@@ -1,3 +1,10 @@
+## Checkpoint página de Facebook (2026-10-13 · Cursor/Claude)
+- Pedido de Raul: publicar en Facebook como en X. No había página; se eligió la configuración guiada en el navegador con su sesión.
+- Página "TuHoy" creada (ID `1408807572318535`): categoría "Sitio web de noticias y medios de comunicación", web, teléfono +1 4028240388 e info@tuhoy.com. Sin foto de perfil ni portada todavía (el navegador no puede subir archivos). No se invitó a amigos ni se conectó WhatsApp.
+- App de Meta "TuHoy Publicador" (App ID `1625626036013171`, sin portafolio comercial) con `pages_show_list`, `pages_read_engagement` y `pages_manage_posts`, autorizada solo para la página TuHoy (no para Cheap Energy, Truckwls, De To' ni RG Motors).
+- Token de usuario ampliado (caduca el 12-dic-2026), del que sale el token de página sin caducidad (`debug_token`: tipo PAGE, `expires_at` 0). Guardado solo en `.env` como `FB_PAGE_TOKEN`, junto a `FB_PAGE_ID`. `FB_MODE=off` hasta que Raul confirme la primera publicación.
+- `scripts/facebook_posts.py` nuevo: lee `data/x_queue.json` (solo lectura) y publica a su hora el mismo texto con el enlace en `/{page}/feed`. Un post por pasada como máximo y ninguno con más de 2 h de retraso. Registro en `data/fb_queue.json` (ignorado por git). Cron cada 15 min en `install_daily_cron.sh`.
+
 ## Checkpoint portada, notas sin desarrollo y ajustes en Ghost 6 (2026-10-13 · Cursor/Claude)
 - Pedido de Raul: "Feature this post" no cambiaba la portada; notas sin desarrollo; revisar todo tras su actualización a Ghost 6. Diagnóstico entregado primero; Raul aprobó todos los arreglos.
 - Portada (tema 1.4.9): `home.hbs` ordena las destacadas por `updated_at desc`; la última que se destaca abre la portada. Antes eran las 4 más recientes por fecha de publicación, y la edición autodestacaba 3 al día.

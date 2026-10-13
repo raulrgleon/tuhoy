@@ -11,6 +11,8 @@ La edición diaria automática la firma **Raul Garcia**. Los artículos enviados
 - [Variables de entorno](#variables-de-entorno)
 - [Edición diaria](#edición-diaria)
 - [Redacción (writer.py)](#redacción-writerpy)
+- [Posts diarios en X](#posts-diarios-en-x-tuhoy_)
+- [Página de Facebook](#página-de-facebook-tuhoy)
 - [Scripts](#scripts)
 - [Tema](#tema)
 - [SEO y Google News](#seo-y-google-news)
@@ -29,6 +31,7 @@ cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin AP
                                      │
                                      ├─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
                                      └─► scripts/x_posts.py ──► un post en X por nota (@TuHoy_)
+                                              └─► scripts/facebook_posts.py ──► el mismo post en la página de Facebook TuHoy
 
 Correo saliente:  Ghost ──► Brevo SMTP (info@tuhoy.com)
 Correo entrante:  info@tuhoy.com ──► Cloudflare Email Routing ──► raulrgleon@gmail.com
@@ -67,6 +70,8 @@ Todas viven en `.env` (permisos `600`, ignorado por git). Plantilla: [`.env.exam
 | `OPENAI_API_KEY` (u otra según proveedor) | Clave del modelo |
 | `LLM_MODEL`, `LLM_BASE_URL` | Opcionales: modelo concreto y endpoint compatible con OpenAI |
 | `LLM_FACTCHECK` | `1` (por defecto) activa la pasada de verificación de hechos |
+| `X_*` | Posts de X (ver [Posts diarios en X](#posts-diarios-en-x-tuhoy_)) |
+| `FB_MODE`, `FB_PAGE_ID`, `FB_PAGE_TOKEN` | Página de Facebook (ver [Página de Facebook](#página-de-facebook-tuhoy)) |
 
 En Coolify, las variables del contenedor se editan en TuHoy Ghost → Environment Variables.
 
@@ -151,6 +156,29 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 
 **Perfil de @TuHoy_:** nombre "TuHoy", foto [`brand/x-avatar.jpg`](brand/x-avatar.jpg) (icono TH), portada [`brand/x-banner.jpg`](brand/x-banner.jpg) (1500×500), bio "Noticias en español, claras y verificadas: inmigración, latinos en EE. UU., política y el mundo. Todos los días. 📰", ubicación Estados Unidos y web https://tuhoy.com. Es cuenta profesional (tipo Business, categoría "Media & News Company"). Tiene fijado un post de bienvenida ([2107338626678067255](https://x.com/TuHoy_/status/2107338626678067255)).
 
+## Página de Facebook (TuHoy)
+
+[`scripts/facebook_posts.py`](scripts/facebook_posts.py) publica en la [página TuHoy](https://www.facebook.com/profile.php?id=1408807572318535) (ID `1408807572318535`) **los mismos posts que X, a la misma hora**, con el enlace a la nota: Facebook arma la vista previa con la foto y el titular. No llama al modelo ni escribe textos propios: lee `data/x_queue.json` (solo lectura) y apunta lo publicado en `data/fb_queue.json`.
+
+- Corre cada 15 minutos desde el cron y solo actúa si `FB_MODE=api`.
+- Para no dar sobresaltos publica como mucho **un post por pasada** y nunca los que llevan más de 2 horas de retraso.
+- Publicar en una página propia con la Graph API es gratis.
+
+Configuración (ya hecha):
+
+1. Página "TuHoy", categoría "Sitio web de noticias y medios de comunicación", web https://tuhoy.com, teléfono +1 402 824 0388 y correo info@tuhoy.com. La administra el perfil de Raul Garcia.
+2. App de Meta **TuHoy Publicador** (App ID `1625626036013171`, caso de uso "Administrar todo en tu página", sin portafolio comercial), con permisos `pages_show_list`, `pages_read_engagement` y `pages_manage_posts`, autorizada **solo para la página TuHoy**.
+3. Token de usuario generado en el [Explorador de la Graph API](https://developers.facebook.com/tools/explorer/) y ampliado a larga duración en el [depurador de tokens](https://developers.facebook.com/tools/debug/accesstoken/). Con él, `GET /me/accounts` da el **token de página, que no caduca**. Ese token va en `FB_PAGE_TOKEN` (solo en `.env`).
+
+Si el token deja de valer (por ejemplo, si Raul cambia la contraseña de Facebook o quita la app), se repite el paso 3.
+
+```bash
+python3 scripts/facebook_posts.py --dry-run   # muestra lo que publicaría ahora
+python3 scripts/facebook_posts.py             # publica lo que toca
+```
+
+Logs: `logs/facebook.log` y `logs/facebook-errors.log`.
+
 ## Scripts
 
 | Script | Qué hace |
@@ -167,8 +195,9 @@ Logs: `logs/daily.log` (líneas `[x]`) y `logs/x-errors.log`.
 | [`upload_routes.py`](scripts/upload_routes.py) | Sube `routes.yaml` a Ghost con copia previa de las rutas activas |
 | [`seed_inmigracion.py`](scripts/seed_inmigracion.py) | Primera tanda de notas de Inmigración (histórico) |
 | [`x_posts.py`](scripts/x_posts.py) | Escribe y programa un post de X por cada nota nueva tras cada edición |
+| [`facebook_posts.py`](scripts/facebook_posts.py) | Publica los mismos posts en la página de Facebook TuHoy a su hora |
 | [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost y traduce el asunto de la invitación |
-| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, de los posts de X y de las plantillas de correo |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, de los posts de X y Facebook y de las plantillas de correo |
 
 Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
