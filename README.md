@@ -201,7 +201,7 @@ Cuenta profesional de negocio, categoría «News & media website», bio «Las no
 
 - Corre cada 15 minutos desde el cron y **solo actúa si `IG_MODE=api`**. Hoy está en `off` hasta que Raul lo confirme.
 - Mismas reglas que Facebook: como mucho **un post por pasada** y ninguno con más de 2 horas de retraso. Sin foto, se omite.
-- Hace falta que @tuhoynoticias esté ligada 1:1 a la página de Facebook TuHoy y que el token de página tenga `instagram_content_publish`. El ID de Instagram se puede dejar en `IG_USER_ID` o se lee de la página.
+- @tuhoynoticias ya está ligada 1:1 a la página de Facebook TuHoy (`IG_USER_ID=17841472487834968`). El token de página incluye `instagram_basic` e `instagram_content_publish`. No se publica nada en Instagram hasta que Raul pida `IG_MODE=api`.
 
 ```bash
 python3 scripts/instagram_posts.py --dry-run   # muestra lo que publicaría ahora
