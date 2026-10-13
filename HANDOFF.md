@@ -1,3 +1,10 @@
+## Checkpoint notas sin foto (2026-10-13 · Cursor/Claude)
+- Problema: 4 notas publicadas sin portada, así que Facebook (y X) mostraban el logo. Tres eran de Univision, que sirve sus fotos en AVIF: Ghost 6 las rechaza (415) y `source_photo` las etiquetaba como JPEG. La cuarta (`voz-baja-...`) tenía como fuente businesswire, que da 403.
+- Pillow 12.3.0 instalado para raul en `~/.local/lib/python3.14/site-packages` (wheel descomprimido, sin pip en el servidor). El cron usa `/usr/bin/python3` como raul, así que lo ve.
+- `daily_edition.py`: nueva `ghost_image()`, que deja pasar JPEG, PNG y WebP y convierte el resto a JPEG. En `publish_item`, si la foto de la fuente no sube se prueba Commons, y **sin foto no se publica** (`skip sin foto`).
+- `use_source_photos.py --sin-foto [--dry-run]`: rellena solo las notas publicadas sin portada. Aplicado: 3 de Univision con su foto («Foto: Univision.») y `voz-baja-...` con una foto de dominio público de campos de lechuga (Charles O'Rear, NARA).
+- Tema 1.4.9: `og:locale` cambió de `es_US` a `es_LA`, porque Facebook rechazaba el scrape por ese valor. Se volvieron a leer las 4 URL en Facebook; el post del ICE ya muestra su foto.
+
 ## Checkpoint página de Facebook (2026-10-13 · Cursor/Claude)
 - Pedido de Raul: publicar en Facebook como en X. No había página; se eligió la configuración guiada en el navegador con su sesión.
 - Página "TuHoy" creada (ID `1408807572318535`): categoría "Sitio web de noticias y medios de comunicación", web, teléfono +1 4028240388 e info@tuhoy.com. Sin foto de perfil ni portada todavía (el navegador no puede subir archivos). No se invitó a amigos ni se conectó WhatsApp.

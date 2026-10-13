@@ -11,6 +11,7 @@ import base64
 import hashlib
 import hmac
 import html
+import io
 import json
 import os
 import random
@@ -342,20 +343,47 @@ def source_photo(article_url: str, raw: str | None = None) -> tuple[bytes, str, 
         return None
     if len(blob) < 8000:
         return None
-    if blob[:3] == b"\xff\xd8":
-        mime, ext = "image/jpeg", "jpg"
-    elif blob[:8] == b"\x89PNG\r\n\x1a\n":
-        mime, ext = "image/png", "png"
-    elif blob[:4] == b"RIFF" and blob[8:12] == b"WEBP":
-        mime, ext = "image/webp", "webp"
-    else:
-        # Ghost acepta jpeg/png; si viene html/error, abortar.
-        if blob[:1] in (b"<", b"{") or blob[:15].lower().startswith(b"<!doctype"):
-            return None
-        mime, ext = "image/jpeg", "jpg"
+    image = ghost_image(blob)
+    if not image:
+        log(f"source photo formato no válido {img}")
+        return None
+    blob, mime, ext = image
     cap = f"Foto: {credit}."
     host = urllib.parse.urlparse(article_url).netloc.replace("www.", "").split(".")[0]
     return blob, f"{host}-fuente.{ext}", mime, cap
+
+
+def ghost_image(blob: bytes) -> tuple[bytes, str, str] | None:
+    """Devuelve la imagen en un formato que Ghost acepta (jpeg, png, webp); convierte el resto a JPEG.
+
+    Univision sirve sus fotos en AVIF, que Ghost 6 rechaza con 415. La conversión usa Pillow
+    (instalado para el usuario en ~/.local); sin Pillow, la foto se descarta.
+    """
+    if blob[:3] == b"\xff\xd8":
+        return blob, "image/jpeg", "jpg"
+    if blob[:8] == b"\x89PNG\r\n\x1a\n":
+        return blob, "image/png", "png"
+    if blob[:4] == b"RIFF" and blob[8:12] == b"WEBP":
+        return blob, "image/webp", "webp"
+    if blob[:1] in (b"<", b"{") or blob[:15].lower().startswith(b"<!doctype"):
+        return None
+    try:
+        from PIL import Image
+
+        im = Image.open(io.BytesIO(blob))
+        im.load()
+        if im.width < 400:
+            return None
+        if im.mode != "RGB":
+            bg = Image.new("RGB", im.size, (255, 255, 255))
+            bg.paste(im, mask=im.convert("RGBA").split()[-1])
+            im = bg
+        out = io.BytesIO()
+        im.save(out, "JPEG", quality=88, optimize=True)
+        return out.getvalue(), "image/jpeg", "jpg"
+    except Exception as e:
+        log(f"conversión de imagen fallida: {e}")
+        return None
 
 
 def strip_html(raw: str) -> str:
@@ -982,17 +1010,23 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
         for name, rx in COUNTRY_TAGS
         if (item.get("country") == name or rx.search(f"{source_title} {title} {excerpt}")) and name not in tags
     ]
+    # Sin portada, Facebook y X muestran el logo del sitio: se prueba la foto de la fuente,
+    # luego Commons, y si ninguna sube no se publica.
     img_url = None
     caption = ""
-    picked = source_photo(article_url)
-    if not picked:
-        queries = story_image_queries(title, text, slug_tag)
-        picked = commons_image(*queries)
-    if picked:
+    for pick in (lambda: source_photo(article_url), lambda: commons_image(*story_image_queries(title, text, slug_tag))):
+        picked = pick()
+        if not picked:
+            continue
         blob, filename, mime, caption = picked
         img_url = ghost.upload_image(blob, filename, mime)
-        if img_url and caption:
-            body += f"\n<p><em>{html.escape(caption)}</em></p>"
+        if img_url:
+            break
+    if not img_url:
+        log(f"skip sin foto: {title}")
+        return False
+    if caption:
+        body += f"\n<p><em>{html.escape(caption)}</em></p>"
 
     # Las frases sin sustento ya se eliminaron; #revisar solo la pone en la cola de revisión humana.
     internal = [{"name": IA_TAG}]

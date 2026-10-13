@@ -92,7 +92,7 @@ Cómo trabaja cada edición:
 3. Descarta duplicados por URL, por título y por parecido con notas ya publicadas (estado en `data/edition_state.json`).
 4. Extrae el texto de la fuente (quitando el menú que algunas páginas ponen antes del titular); si no hay texto útil o trae restos de código de la página, descarta la pieza. En la ranura de países exige poder leer el artículo completo. **No inventa noticias.**
 5. Redacta la nota con `writer.py` (mínimo 200 palabras). Si la redacción falla o la fuente no da para desarrollar la noticia, **no publica** y pasa a la siguiente: ya no hay resúmenes extractivos de 3 a 5 frases.
-6. Pone la foto de la fuente con su crédito, etiquetas (sección + Venezuela/Cuba si el titular o la entradilla los nombran), extracto y meta SEO.
+6. Pone la foto de la fuente con su crédito; si la fuente no tiene o Ghost la rechaza, usa una foto libre de Wikimedia Commons. **Sin foto no publica**, porque Facebook y X mostrarían el logo del sitio en vez de la imagen de la noticia. Univision sirve sus fotos en AVIF, que Ghost 6 rechaza (415): se convierten a JPEG con Pillow, instalado para el usuario en `~/.local` porque el servidor no tiene pip (sin Pillow, esas fotos se descartan y se pasa a Commons). Añade etiquetas (sección + Venezuela/Cuba si el titular o la entradilla los nombran), extracto y meta SEO.
 7. Publica en Ghost **sin destacar**: la portada la decide el equipo (ver «Portada»). Si el verificador encontró afirmaciones sin respaldo en la fuente (ya eliminadas del texto), la nota se publica igual con la etiqueta interna `#revisar` y se anota en `data/review_queue.jsonl`. Que la nota sea breve o tenga una sola fuente ya no la marca.
 
 Fuentes descartadas: **France 24**, **EFE** y **AP** bloquean la lectura automática (403); **Voz de América** no publica desde marzo de 2025; Cubanet y Diario de Cuba no dejan leer el texto. Google News no sirve porque cifra los enlaces.
@@ -172,6 +172,12 @@ Configuración (ya hecha):
 
 Si el token deja de valer (por ejemplo, si Raul cambia la contraseña de Facebook o quita la app), se repite el paso 3.
 
+La vista previa sale de las etiquetas `og:` de la nota. El tema declara `og:locale` = `es_LA` porque Facebook rechaza la página entera con `es_US`, que no está en su lista de idiomas. Si cambias la foto de una nota ya compartida, pide a Facebook que la vuelva a leer:
+
+```bash
+curl -X POST https://graph.facebook.com/v23.0/ -d "id=https://tuhoy.com/<slug>/" -d scrape=true -d "access_token=$FB_PAGE_TOKEN"
+```
+
 ```bash
 python3 scripts/facebook_posts.py --dry-run   # muestra lo que publicaría ahora
 python3 scripts/facebook_posts.py             # publica lo que toca
@@ -188,7 +194,7 @@ Logs: `logs/facebook.log` y `logs/facebook-errors.log`.
 | [`eval_writer.py`](scripts/eval_writer.py) | Compara redacción extractiva vs. modelo |
 | [`rewrite_published.py`](scripts/rewrite_published.py) | Reescribe notas ya publicadas desde su fuente; conserva URL, fecha e imagen y guarda copia (`--restore` para deshacer) |
 | [`seo_repair.py`](scripts/seo_repair.py) | Repara texto residual, descripciones, títulos SEO e indexación |
-| [`use_source_photos.py`](scripts/use_source_photos.py) | Pone la foto de la fuente y su crédito en cada nota |
+| [`use_source_photos.py`](scripts/use_source_photos.py) | Pone la foto de la fuente y su crédito en cada nota. `--sin-foto` (con `--dry-run` opcional) solo rellena las notas publicadas sin portada: foto de la fuente o, si no hay, de Commons |
 | [`fix_story_images.py`](scripts/fix_story_images.py) | Sustituye fotos genéricas por imágenes de Wikimedia Commons |
 | [`legal_pages.py`](scripts/legal_pages.py) | Crea/actualiza Contacto, Privacidad y Términos (`--only contacto` para tocar una sola; el teléfono está en `PHONE`) |
 | [`upload_theme.py`](scripts/upload_theme.py) | Empaqueta, sube y activa el tema `themes/tuhoy` |

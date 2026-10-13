@@ -44,6 +44,67 @@ def sync_existing_credits(ghost) -> int:
     return updated
 
 
+def source_url(post: dict) -> str:
+    src = post.get("canonical_url") or ""
+    if src.startswith("http"):
+        return src
+    for link in re.findall(r'href="(https?://[^"]+)"', post.get("html") or ""):
+        if "tuhoy.com" not in link and not link.lower().endswith(".pdf"):
+            return link
+    return ""
+
+
+def fill_missing(ghost, dry_run: bool) -> int:
+    """Pone portada a las notas publicadas que no tienen: foto de la fuente o, si no, de Commons."""
+    flt = "feature_image:null%2Bstatus:published"
+    code, resp = ghost.get(f"/posts/?limit=all&filter={flt}&formats=html&include=tags")
+    if code >= 300:
+        daily.log(f"sin foto: lectura fallida {code} {resp}")
+        return 0
+    n = 0
+    for post in resp.get("posts") or []:
+        src = source_url(post)
+        slug_tag = daily.primary_slug([t["name"] for t in post.get("tags") or [] if not t["name"].startswith("#")])
+        text = daily.strip_html(post.get("html") or "")
+        url = cap = None
+        for pick in (
+            lambda: daily.source_photo(src) if src else None,
+            lambda: daily.commons_image(*daily.story_image_queries(post["title"], text, slug_tag)),
+        ):
+            picked = pick()
+            if not picked:
+                continue
+            blob, name, mime, cap = picked
+            if dry_run:
+                url = f"(prueba) {name}"
+                break
+            url = ghost.upload_image(blob, name, mime)
+            if url:
+                break
+        if not url:
+            daily.log(f"sin foto: no se encontró imagen para {post['slug']}")
+            continue
+        if dry_run:
+            print(f"{post['slug']}: {url} · {cap}")
+            n += 1
+            continue
+        payload = {
+            "posts": [
+                {
+                    "feature_image": url,
+                    "feature_image_alt": post["title"],
+                    "feature_image_caption": cap,
+                    "html": replace_photo_credit(post.get("html") or "", cap) if cap else post.get("html"),
+                    "updated_at": post["updated_at"],
+                }
+            ]
+        }
+        c, r = ghost.put_json(f"/posts/{post['id']}/?source=html", payload)
+        daily.log(f"sin foto: {post['slug']} -> {c} {cap} {url}")
+        n += c < 300
+    return n
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -51,11 +112,17 @@ def main() -> int:
         action="store_true",
         help="Sincroniza el crédito final sin volver a descargar imágenes.",
     )
+    parser.add_argument("--sin-foto", action="store_true", help="Solo pone portada a las notas publicadas sin foto.")
+    parser.add_argument("--dry-run", action="store_true", help="Con --sin-foto: muestra qué foto pondría.")
     args = parser.parse_args()
     env = daily.load_env()
     ghost = daily.Ghost(env["GHOST_URL"], env["GHOST_ADMIN_API_KEY"])
     if args.credits_only:
         sync_existing_credits(ghost)
+        return 0
+    if args.sin_foto:
+        n = fill_missing(ghost, args.dry_run)
+        daily.log(f"sin foto: {n} notas con portada nueva")
         return 0
 
     code, resp = ghost.get("/posts/?limit=50&formats=html")
