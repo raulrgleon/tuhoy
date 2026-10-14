@@ -1,3 +1,10 @@
+## Checkpoint TikTok posts públicos (2026-10-14 ~11:20 Chicago · Cursor)
+- Raul: los posts no deben salir privados. Hecho en la cuenta y en Studio:
+  - Cuenta **https://www.tiktok.com/@tuhoynoticias** ya no es privada (Private account off).
+  - La Guaira photo `7696547300822224141` y joyas photo `7696546868259491086` → privacidad **Everyone** (globo, sin candado).
+- TikTok **no deja** que una app sin auditar publique público. Hasta que aprueben Production, los posts **nuevos por API fallarán** mientras la cuenta esté pública. Los dos de ahora sí se ven.
+- Production **TuHoy Publicador** `7696499756253153286` sigue en Draft: Login Kit + Content Posting Direct Post añadidos; falta vídeo demo + Submit for review.
+
 ## Checkpoint canal WhatsApp (2026-10-14 ~10:40 Chicago · Cursor)
 - Raul pidió publicar las notas **automático** en el canal. **No se puede:** Meta no tiene API para canales. No usamos pasarelas no oficiales (riesgo de bloquear el 402).
 - Alternativa segura en marcha: `scripts/whatsapp_channel.py`, `WA_MODE=email`, cron 08:00 Chicago, 2 notas de la mañana listas para pegar. Un correo por día a `WA_EMAIL_TO`. Canal: https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45
