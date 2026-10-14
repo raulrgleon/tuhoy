@@ -1,3 +1,7 @@
+## Checkpoint canal WhatsApp (2026-10-14 ~10:40 Chicago · Cursor)
+- Raul pidió publicar las notas **automático** en el canal. **No se puede:** Meta no tiene API para canales. No usamos pasarelas no oficiales (riesgo de bloquear el 402).
+- Alternativa segura en marcha: `scripts/whatsapp_channel.py`, `WA_MODE=email`, cron 08:00 Chicago, 2 notas de la mañana listas para pegar. Un correo por día a `WA_EMAIL_TO`. Canal: https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45
+
 ## Checkpoint TikTok en marcha (2026-10-14 ~10:32 Chicago · Cursor)
 - Pipeline **encendido**: `TT_MODE=api`, cron `*/15`, OAuth @tuhoynoticias (sandbox), dominio sandbox **tuhoy.com** verificado (TXT Cloudflare `c8c01520aca31860ee34b9b31f2a1e4c`; el TXT de Production `ac11199af2001dd305dd43c0edd1419a` sigue).
 - Primeros posts reales (privados, app sin auditar; cuenta TikTok en privado): joyas/ancianas `6acf60daaea50d00012a981c` (`p_pub_url~v2.7696546775800825869`) y La Guaira `6acf619aaea50d00012a983d` (`p_pub_url~v2.7696547254538422285`). PNG se convierte a JPEG porque TikTok no tira de PNG.

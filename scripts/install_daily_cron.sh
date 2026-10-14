@@ -15,11 +15,13 @@ TT_DUE="*/15 * * * * $PY $DIR/scripts/tiktok_posts.py > /dev/null 2>> $DIR/logs/
 OVERRIDES="*/10 * * * * $DIR/scripts/apply_ghost_overrides.sh >> $DIR/logs/overrides.log 2>&1"
 # Boletín «Lo que importa hoy» a las 07 de Chicago, tras la edición de las 06 (solo si DIGEST_MODE=on).
 DIGEST="0 * * * * case \"\$(TZ=America/Chicago date +\\%H)\" in 07) $PY $DIR/scripts/daily_digest.py > /dev/null 2>> $DIR/logs/digest-errors.log;; esac"
+# Canal WhatsApp: Meta no tiene API. A las 08 Chicago, correo con 1–2 notas listas para pegar (WA_MODE=email).
+WA_MAIL="0 * * * * case \"\$(TZ=America/Chicago date +\\%H)\" in 08) $PY $DIR/scripts/whatsapp_channel.py > /dev/null 2>> $DIR/logs/whatsapp-channel-errors.log;; esac"
 # Aviso a Bing y demás buscadores (IndexNow) de las notas nuevas, cada hora (solo si hay INDEXNOW_KEY).
 INDEXNOW="5 * * * * $PY $DIR/scripts/indexnow.py > /dev/null 2>> $DIR/logs/indexnow-errors.log"
 mkdir -p $DIR/logs $DIR/data
-chmod 755 $DIR/scripts/daily_edition.py $DIR/scripts/x_posts.py $DIR/scripts/facebook_posts.py $DIR/scripts/instagram_posts.py $DIR/scripts/tiktok_posts.py $DIR/scripts/daily_digest.py $DIR/scripts/indexnow.py $DIR/scripts/apply_ghost_overrides.sh
-(crontab -l 2>/dev/null | grep -v -e 'tuhoy/scripts/daily_edition.py' -e 'tuhoy/scripts/x_posts.py' -e 'tuhoy/scripts/facebook_posts.py' -e 'tuhoy/scripts/instagram_posts.py' -e 'tuhoy/scripts/tiktok_posts.py' -e 'tuhoy/scripts/daily_digest.py' -e 'tuhoy/scripts/indexnow.py' -e 'tuhoy/scripts/apply_ghost_overrides.sh' || true
- echo "$EDITION"; echo "$X_DUE"; echo "$FB_DUE"; echo "$IG_DUE"; echo "$TT_DUE"; echo "$DIGEST"; echo "$INDEXNOW"; echo "$OVERRIDES") | crontab -
+chmod 755 $DIR/scripts/daily_edition.py $DIR/scripts/x_posts.py $DIR/scripts/facebook_posts.py $DIR/scripts/instagram_posts.py $DIR/scripts/tiktok_posts.py $DIR/scripts/whatsapp_channel.py $DIR/scripts/daily_digest.py $DIR/scripts/indexnow.py $DIR/scripts/apply_ghost_overrides.sh
+(crontab -l 2>/dev/null | grep -v -e 'tuhoy/scripts/daily_edition.py' -e 'tuhoy/scripts/x_posts.py' -e 'tuhoy/scripts/facebook_posts.py' -e 'tuhoy/scripts/instagram_posts.py' -e 'tuhoy/scripts/tiktok_posts.py' -e 'tuhoy/scripts/whatsapp_channel.py' -e 'tuhoy/scripts/daily_digest.py' -e 'tuhoy/scripts/indexnow.py' -e 'tuhoy/scripts/apply_ghost_overrides.sh' || true
+ echo "$EDITION"; echo "$X_DUE"; echo "$FB_DUE"; echo "$IG_DUE"; echo "$TT_DUE"; echo "$DIGEST"; echo "$WA_MAIL"; echo "$INDEXNOW"; echo "$OVERRIDES") | crontab -
 echo "cron instalado:"
 crontab -l

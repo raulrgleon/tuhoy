@@ -14,6 +14,7 @@ La edición diaria automática la firma **Raul Garcia**. Los artículos enviados
 - [Posts diarios en X](#posts-diarios-en-x-tuhoy_)
 - [Página de Facebook](#página-de-facebook-tuhoy)
 - [Instagram](#instagram-tuhoynoticias)
+- [Canal de WhatsApp](#canal-de-whatsapp-tuhoy)
 - [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)
 - [Scripts](#scripts)
 - [Tema](#tema)
@@ -37,6 +38,7 @@ cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin AP
                                               ├─► scripts/instagram_posts.py ──► foto + pie en @tuhoynoticias
                                               └─► scripts/tiktok_posts.py ──► foto + pie en TikTok @tuhoynoticias
 cron 07 h Chicago ──► scripts/daily_digest.py ──► Ghost + Mailgun ──► boletín «Lo que importa hoy» a los suscriptores
+cron 08 h Chicago ──► scripts/whatsapp_channel.py ──► correo con 1–2 notas para pegar en el canal de WhatsApp
 cron cada hora    ──► scripts/indexnow.py ──► IndexNow (Bing, Yandex…) con las notas nuevas
 
 Correo saliente:  Ghost ──► Brevo SMTP (info@tuhoy.com)
@@ -80,6 +82,7 @@ Todas viven en `.env` (permisos `600`, ignorado por git). Plantilla: [`.env.exam
 | `FB_MODE`, `FB_PAGE_ID`, `FB_PAGE_TOKEN` | Página de Facebook (ver [Página de Facebook](#página-de-facebook-tuhoy)) |
 | `IG_MODE`, `IG_USER_ID` | Instagram @tuhoynoticias (ver [Instagram](#instagram-tuhoynoticias)); usa el token de la página |
 | `TT_MODE`, `TT_CLIENT_KEY`, `TT_CLIENT_SECRET` | TikTok @tuhoynoticias (ver [TikTok](#tiktok-tuhoynoticias)) |
+| `WA_MODE`, `WA_POSTS`, `WA_EMAIL_TO` | Canal de WhatsApp (ver [Canal de WhatsApp](#canal-de-whatsapp-tuhoy)) |
 | `DIGEST_MODE`, `DIGEST_POSTS`, `DIGEST_MIN`, `DIGEST_NEWSLETTER` | Boletín diario (ver [Boletín diario](#boletín-diario-y-crecimiento)) |
 | `INDEXNOW_KEY` | Clave pública de IndexNow, servida por el Worker `tuhoy-indexnow` |
 
@@ -112,7 +115,7 @@ python3 scripts/daily_edition.py --dry-run            # muestra qué publicaría
 python3 scripts/daily_edition.py --inmig 2 --general 2 --paises 1   # una edición a mano
 ```
 
-Instalar o reinstalar el cron (edición, posts de X, Facebook, Instagram y TikTok, boletín, IndexNow y plantillas de Ghost):
+Instalar o reinstalar el cron (edición, posts de X, Facebook, Instagram y TikTok, correo del canal de WhatsApp, boletín, IndexNow y plantillas de Ghost):
 
 ```bash
 bash scripts/install_daily_cron.sh
@@ -231,6 +234,22 @@ python3 scripts/test_tiktok_posts.py
 
 Logs: `logs/tiktok.log` y `logs/tiktok-errors.log`.
 
+## Canal de WhatsApp (TuHoy)
+
+Canal [whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45). Es un boletín de un sentido, no un chat. El WhatsApp de avisos sigue en [wa.me/14028240388](https://wa.me/14028240388).
+
+**Meta no tiene API oficial para publicar en canales.** No se puede hacer lo mismo que con X, Facebook, Instagram o TikTok. Las pasarelas no oficiales (sesión del teléfono) pueden bloquear el número de avisos; TuHoy no las usa.
+
+[`scripts/whatsapp_channel.py`](scripts/whatsapp_channel.py) envía **un correo al día** (08:00 Chicago, `WA_MODE=email`) con las **2 primeras notas** de la mañana, foto, texto y enlace listos para pegar en el canal. Un envío por día (`data/wa_queue.json`).
+
+```bash
+python3 scripts/whatsapp_channel.py --dry-run
+python3 scripts/whatsapp_channel.py
+python3 scripts/test_whatsapp_channel.py
+```
+
+Logs: `logs/whatsapp-channel.log`.
+
 ## Boletín diario y crecimiento
 
 Punto de partida (13-oct-2026): 2 suscriptores, página de Facebook recién creada y entre 10 y 50 visitas reales al día según Cloudflare Web Analytics. Las cifras de «visitantes» del panel de tráfico de Cloudflare (~550/día) incluyen sobre todo robots.
@@ -273,10 +292,11 @@ Logs: `logs/digest.log` y `logs/indexnow.log`.
 | [`instagram_posts.py`](scripts/instagram_posts.py) | Publica los mismos posts en @tuhoynoticias (foto + pie; `IG_MODE=api`) |
 | [`tiktok_posts.py`](scripts/tiktok_posts.py) | Publica los mismos posts en TikTok @tuhoynoticias (foto + pie; `TT_MODE=api`) |
 | [`tiktok_oauth.py`](scripts/tiktok_oauth.py) | Autoriza @tuhoynoticias y guarda el token |
+| [`whatsapp_channel.py`](scripts/whatsapp_channel.py) | Correo diario con 1–2 notas para pegar en el canal de WhatsApp (`WA_MODE=email`) |
 | [`daily_digest.py`](scripts/daily_digest.py) | Envía el boletín diario «Lo que importa hoy» a las 07:00 Chicago |
 | [`indexnow.py`](scripts/indexnow.py) | Avisa a Bing y otros buscadores (IndexNow) de las notas nuevas, cada hora |
 | [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost y traduce el asunto de la invitación |
-| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, los posts de X, Facebook, Instagram y TikTok, el boletín, IndexNow y las plantillas de correo |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, los posts de X, Facebook, Instagram y TikTok, el correo del canal de WhatsApp, el boletín, IndexNow y las plantillas de correo |
 
 Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
