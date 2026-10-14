@@ -1,6 +1,12 @@
+## Checkpoint TikTok developer app (2026-10-14 ~10:20 Chicago · Cursor)
+- App **TuHoy Publicador** en developers.tiktok.com: id `7696499756253153286`, tipo Other, dueño Individual, categoría News.
+- Dominio **tuhoy.com** verificado (TXT Cloudflare `tiktok-developers-site-verification=…`, record `ac11199af2001dd305dd43c0edd1419a`). SPF/Brevo TXT intactos.
+- En Production (borrador, sin Guardar: TikTok exige vídeo demo): Login Kit + Content Posting API, redirect `https://tuhoy.com/`, TOS/privacidad/web tuhoy.com, icono 1024.
+- Claves de Production en `.env` (`TT_CLIENT_KEY`/`TT_CLIENT_SECRET`); `TT_MODE` sigue `off`. No están en git.
+- Sandbox **TuHoy sandbox** id `7696490949345773586`. Pendiente: Raul entra en TikTok como **@tuhoynoticias** (pestaña Login abierta) para añadirla como target user, OAuth y `TT_MODE=api`. Hasta la auditoría de TikTok los posts pueden salir **privados**.
+
 ## Checkpoint TikTok automático (2026-10-14 ~10:05 Chicago · Cursor)
-- Raul pidió el mismo ritmo que X/Facebook/Instagram: **un post por nota**. `scripts/tiktok_posts.py` lee `x_queue.json`, sube la foto + pie, cron */15, `TT_MODE` (ahora `off` hasta app + OAuth). Tests 4/4.
-- Falta: app en developers.tiktok.com (Content Posting API, `video.publish`, redirect `https://tuhoy.com/`), verificar dominio tuhoy.com, `python3 scripts/tiktok_oauth.py` con @tuhoynoticias, `TT_MODE=api`. Hasta la auditoría de TikTok los posts pueden salir **privados**.
+- Raul pidió el mismo ritmo que X/Facebook/Instagram: **un post por nota**. `scripts/tiktok_posts.py` lee `x_queue.json`, sube la foto + pie, cron */15, `TT_MODE` (ahora `off` hasta OAuth). Tests 4/4. GitHub `34996b7`.
 
 ## Checkpoint TikTok @tuhoynoticias (2026-10-14 ~09:57 Chicago · Cursor)
 - Cuenta **https://www.tiktok.com/@tuhoynoticias**. Bio: «Las noticias que importan, en español.» Tema 1.5.4 (pie, notas, boletín). No es el TikTok personal.
