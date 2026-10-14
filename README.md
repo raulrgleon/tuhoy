@@ -34,7 +34,8 @@ cron 06, 12 y 18 h Chicago ──► scripts/daily_edition.py ──► Admin AP
                                      ├─► scripts/writer.py ──► modelo de lenguaje (OpenAI u otro)
                                      └─► scripts/x_posts.py ──► un post en X por nota (@TuHoy_)
                                               ├─► scripts/facebook_posts.py ──► el mismo post en la página de Facebook TuHoy
-                                              └─► scripts/instagram_posts.py ──► foto + pie en @tuhoynoticias
+                                              ├─► scripts/instagram_posts.py ──► foto + pie en @tuhoynoticias
+                                              └─► scripts/tiktok_posts.py ──► foto + pie en TikTok @tuhoynoticias
 cron 07 h Chicago ──► scripts/daily_digest.py ──► Ghost + Mailgun ──► boletín «Lo que importa hoy» a los suscriptores
 cron cada hora    ──► scripts/indexnow.py ──► IndexNow (Bing, Yandex…) con las notas nuevas
 
@@ -78,6 +79,7 @@ Todas viven en `.env` (permisos `600`, ignorado por git). Plantilla: [`.env.exam
 | `X_*` | Posts de X (ver [Posts diarios en X](#posts-diarios-en-x-tuhoy_)) |
 | `FB_MODE`, `FB_PAGE_ID`, `FB_PAGE_TOKEN` | Página de Facebook (ver [Página de Facebook](#página-de-facebook-tuhoy)) |
 | `IG_MODE`, `IG_USER_ID` | Instagram @tuhoynoticias (ver [Instagram](#instagram-tuhoynoticias)); usa el token de la página |
+| `TT_MODE`, `TT_CLIENT_KEY`, `TT_CLIENT_SECRET` | TikTok @tuhoynoticias (ver [TikTok](#tiktok-tuhoynoticias)) |
 | `DIGEST_MODE`, `DIGEST_POSTS`, `DIGEST_MIN`, `DIGEST_NEWSLETTER` | Boletín diario (ver [Boletín diario](#boletín-diario-y-crecimiento)) |
 | `INDEXNOW_KEY` | Clave pública de IndexNow, servida por el Worker `tuhoy-indexnow` |
 
@@ -110,7 +112,7 @@ python3 scripts/daily_edition.py --dry-run            # muestra qué publicaría
 python3 scripts/daily_edition.py --inmig 2 --general 2 --paises 1   # una edición a mano
 ```
 
-Instalar o reinstalar el cron (edición, posts de X y Facebook, boletín, IndexNow y plantillas de Ghost):
+Instalar o reinstalar el cron (edición, posts de X, Facebook, Instagram y TikTok, boletín, IndexNow y plantillas de Ghost):
 
 ```bash
 bash scripts/install_daily_cron.sh
@@ -210,6 +212,25 @@ python3 scripts/instagram_posts.py             # publica lo que toca
 
 Logs: `logs/instagram.log` y `logs/instagram-errors.log`.
 
+## TikTok (@tuhoynoticias)
+
+Cuenta [tiktok.com/@tuhoynoticias](https://www.tiktok.com/@tuhoynoticias). Bio «Las noticias que importan, en español.» No es el TikTok personal.
+
+[`scripts/tiktok_posts.py`](scripts/tiktok_posts.py) publica **los mismos posts que X, a la misma hora**: TikTok no arma vista previa con enlace, así que sube la foto de la nota (modo foto) y pone el texto + la URL en la descripción. Lee `data/x_queue.json` (solo lectura) y apunta lo publicado en `data/tt_queue.json`.
+
+- Corre cada 15 minutos desde el cron y **solo actúa si `TT_MODE=api`**.
+- Mismas reglas que Instagram: como mucho **un post por pasada** y ninguno con más de 2 horas de retraso. Sin foto, se omite. Si hay 15 notas, salen 15 posts, uno cada 15 minutos, en la hora que ya marcó X.
+- TikTok exige una app en [developers.tiktok.com](https://developers.tiktok.com/) (Content Posting API, Direct Post, ámbito `video.publish`) y verificar que el dominio `tuhoy.com` es nuestro, para que puedan leer las fotos. Autorizar @tuhoynoticias: `python3 scripts/tiktok_oauth.py`. Tokens en `data/tt_auth.json` (gitignore).
+- Hasta que TikTok **audite** la app, la API solo deja publicar en **privado**. El script lo intenta público y, si TikTok bloquea, lo deja privado y lo anota en el log.
+
+```bash
+python3 scripts/tiktok_posts.py --dry-run   # muestra lo que publicaría ahora
+python3 scripts/tiktok_posts.py             # publica lo que toca
+python3 scripts/test_tiktok_posts.py
+```
+
+Logs: `logs/tiktok.log` y `logs/tiktok-errors.log`.
+
 ## Boletín diario y crecimiento
 
 Punto de partida (13-oct-2026): 2 suscriptores, página de Facebook recién creada y entre 10 y 50 visitas reales al día según Cloudflare Web Analytics. Las cifras de «visitantes» del panel de tráfico de Cloudflare (~550/día) incluyen sobre todo robots.
@@ -250,10 +271,12 @@ Logs: `logs/digest.log` y `logs/indexnow.log`.
 | [`x_posts.py`](scripts/x_posts.py) | Escribe y programa un post de X por cada nota nueva tras cada edición |
 | [`facebook_posts.py`](scripts/facebook_posts.py) | Publica los mismos posts en la página de Facebook TuHoy a su hora |
 | [`instagram_posts.py`](scripts/instagram_posts.py) | Publica los mismos posts en @tuhoynoticias (foto + pie; `IG_MODE=api`) |
+| [`tiktok_posts.py`](scripts/tiktok_posts.py) | Publica los mismos posts en TikTok @tuhoynoticias (foto + pie; `TT_MODE=api`) |
+| [`tiktok_oauth.py`](scripts/tiktok_oauth.py) | Autoriza @tuhoynoticias y guarda el token |
 | [`daily_digest.py`](scripts/daily_digest.py) | Envía el boletín diario «Lo que importa hoy» a las 07:00 Chicago |
 | [`indexnow.py`](scripts/indexnow.py) | Avisa a Bing y otros buscadores (IndexNow) de las notas nuevas, cada hora |
 | [`apply_ghost_overrides.sh`](scripts/apply_ghost_overrides.sh) | Copia las plantillas de correo propias (`ghost-overrides/`) dentro del contenedor de Ghost y traduce el asunto de la invitación |
-| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, los posts de X, Facebook e Instagram, el boletín, IndexNow y las plantillas de correo |
+| [`install_daily_cron.sh`](scripts/install_daily_cron.sh) | Instala el cron de la edición diaria, los posts de X, Facebook, Instagram y TikTok, el boletín, IndexNow y las plantillas de correo |
 
 Todos leen `.env` y usan la Admin API con un User-Agent de navegador (Cloudflare bloquea con error 1010 los User-Agent de script).
 
@@ -291,7 +314,7 @@ Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces leg
 - Teléfono y WhatsApp de avisos: **(402) 824-0388** (`https://wa.me/14028240388`, `tel:+14028240388`). Aparece en el pie, al final de cada nota y en `/contacto/`. Si cambia, edita `themes/tuhoy/partials/footer.hbs`, `themes/tuhoy/post.hbs` y `PHONE`/`PHONE_WA` en `scripts/legal_pages.py`.
 - Canal de WhatsApp (noticias, no es un chat): [whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45). En el pie, al final de cada nota, `/contacto/` y el boletín.
 - Instagram: [@tuhoynoticias](https://www.instagram.com/tuhoynoticias/). En el pie y al final de cada nota.
-- TikTok: [@tuhoynoticias](https://www.tiktok.com/@tuhoynoticias). En el pie, al final de cada nota y el boletín. Primera semana: 1 carrusel al día a mano, no el RSS entero.
+- TikTok: [@tuhoynoticias](https://www.tiktok.com/@tuhoynoticias). En el pie, al final de cada nota y el boletín. Publicación automática: [`tiktok_posts.py`](scripts/tiktok_posts.py) (misma cola que X).
 
 ## Correo
 

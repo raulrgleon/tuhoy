@@ -1,5 +1,9 @@
+## Checkpoint TikTok automático (2026-10-14 ~10:05 Chicago · Cursor)
+- Raul pidió el mismo ritmo que X/Facebook/Instagram: **un post por nota**. `scripts/tiktok_posts.py` lee `x_queue.json`, sube la foto + pie, cron */15, `TT_MODE` (ahora `off` hasta app + OAuth). Tests 4/4.
+- Falta: app en developers.tiktok.com (Content Posting API, `video.publish`, redirect `https://tuhoy.com/`), verificar dominio tuhoy.com, `python3 scripts/tiktok_oauth.py` con @tuhoynoticias, `TT_MODE=api`. Hasta la auditoría de TikTok los posts pueden salir **privados**.
+
 ## Checkpoint TikTok @tuhoynoticias (2026-10-14 ~09:57 Chicago · Cursor)
-- Cuenta **https://www.tiktok.com/@tuhoynoticias**. Bio: «Las noticias que importan, en español.» Tema 1.5.4 (pie, notas, boletín). No es el TikTok personal. Publicación: 1 carrusel/día a mano; no automatizar el RSS.
+- Cuenta **https://www.tiktok.com/@tuhoynoticias**. Bio: «Las noticias que importan, en español.» Tema 1.5.4 (pie, notas, boletín). No es el TikTok personal.
 
 ## Checkpoint canal de WhatsApp (2026-10-14 ~09:40 Chicago · Cursor)
 - Raul creó el canal **TuHoy**: https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45

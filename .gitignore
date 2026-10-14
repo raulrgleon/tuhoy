@@ -20,6 +20,8 @@ data/x_queue.json
 data/x_queue.antes-*.json
 data/fb_queue.json
 data/ig_queue.json
+data/tt_queue.json
+data/tt_auth.json
 
 # Correos, códigos de confirmación y estado privados
 data/mail-private/
