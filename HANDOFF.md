@@ -1,3 +1,6 @@
+## Checkpoint TikTok @tuhoynoticias (2026-10-14 ~09:57 Chicago · Cursor)
+- Cuenta **https://www.tiktok.com/@tuhoynoticias**. Bio: «Las noticias que importan, en español.» Tema 1.5.4 (pie, notas, boletín). No es el TikTok personal. Publicación: 1 carrusel/día a mano; no automatizar el RSS.
+
 ## Checkpoint canal de WhatsApp (2026-10-14 ~09:40 Chicago · Cursor)
 - Raul creó el canal **TuHoy**: https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45
 - Tema 1.5.3: pie y final de cada nota. `/contacto/` y el boletín también. El chat `wa.me/14028240388` sigue para avisos; el canal no es un chat.

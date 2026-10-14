@@ -217,7 +217,7 @@ Punto de partida (13-oct-2026): 2 suscriptores, página de Facebook recién crea
 **Boletín «Lo que importa hoy».** [`scripts/daily_digest.py`](scripts/daily_digest.py) sale a las **07:00 Chicago**, después de la edición de las 06:00. Crea en Ghost un post de **solo correo**: no aparece en la web y lleva la etiqueta interna `#boletin`. Ghost lo envía con Mailgun (`mg.tuhoy.com`) a todos los suscriptores de la newsletter `default-newsletter`.
 
 - Elige hasta `DIGEST_POSTS` notas (6) de las últimas 24 horas, con foto y sin `#resumen-automatico`. Las secciones se turnan, empezando por Inmigración, con un máximo de 3 por sección.
-- Solo la primera nota lleva foto; las demás, titular, entradilla y enlace. Al final pide suscribirse y seguir en Facebook, Instagram, X y el [canal de WhatsApp](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45).
+- Solo la primera nota lleva foto; las demás, titular, entradilla y enlace. Al final pide suscribirse y seguir en Facebook, Instagram, TikTok, X y el [canal de WhatsApp](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45).
 - Un boletín por día como máximo (`data/digest_state.json`), y ninguno si hay menos de `DIGEST_MIN` notas (3). Solo actúa con `DIGEST_MODE=on`.
 - Las integraciones de Ghost no pueden enviar vistas previas, así que `--test` hace un envío real filtrado por la etiqueta de miembro `prueba-boletin`, que solo lleva el correo indicado.
 
@@ -226,7 +226,7 @@ python3 scripts/daily_digest.py --dry-run                  # notas elegidas y HT
 python3 scripts/daily_digest.py --test raulrgleon@gmail.com # prueba solo a ese suscriptor
 ```
 
-**Captación en la web (tema 1.5.3).** Cada nota tiene botones para compartir por WhatsApp, Facebook y X (además de «Compartir» y «Copiar enlace»). Al final de la nota hay una caja de suscripción «Lo que importa hoy, en tu correo», que no ven los ya suscritos, y enlaces a Facebook (`facebook.com/tuhoynoticias`), Instagram, X y el [canal de WhatsApp](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45). El pie enlaza también a la página de Facebook, a [@tuhoynoticias](https://www.instagram.com/tuhoynoticias/) y al canal.
+**Captación en la web (tema 1.5.4).** Cada nota tiene botones para compartir por WhatsApp, Facebook y X (además de «Compartir» y «Copiar enlace»). Al final de la nota hay una caja de suscripción «Lo que importa hoy, en tu correo», que no ven los ya suscritos, y enlaces a Facebook (`facebook.com/tuhoynoticias`), Instagram, [TikTok](https://www.tiktok.com/@tuhoynoticias), X y el [canal de WhatsApp](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45). El pie enlaza también esas redes.
 
 **Buscadores.** [`scripts/indexnow.py`](scripts/indexnow.py) avisa cada hora por IndexNow (Bing, que alimenta a DuckDuckGo, Yahoo y ChatGPT, además de Yandex, Seznam y Naver) de las notas publicadas que aún no se avisaron (`data/indexnow_state.json`). La clave se sirve en `https://tuhoy.com/<INDEXNOW_KEY>.txt` desde el Worker de Cloudflare `tuhoy-indexnow`, en la ruta `tuhoy.com/<clave>.txt`. Google no usa IndexNow: lee los sitemaps enviados en Search Console. Google News ya no admite altas manuales en Publisher Center; incluye los sitios de forma automática según su contenido.
 
@@ -267,7 +267,7 @@ python3 scripts/upload_theme.py   # empaqueta, sube y activa el tema
 
 También se puede subir el ZIP a mano en Ghost → Settings → Design → Change theme → Upload theme.
 
-Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a Facebook, @tuhoynoticias, @TuHoy_ en X, al [canal de WhatsApp](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45) y al WhatsApp/teléfono de avisos, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, botones para compartir y caja de suscripción (ver [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)), la meta `twitter:site` y la meta de verificación de Search Console.
+Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces legales, a Facebook, Instagram y TikTok @tuhoynoticias, @TuHoy_ en X, al [canal de WhatsApp](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45) y al WhatsApp/teléfono de avisos, el recuadro «¿Sabes algo que debamos contar?» con botón de WhatsApp al final de cada nota, botones para compartir y caja de suscripción (ver [Boletín diario y crecimiento](#boletín-diario-y-crecimiento)), la meta `twitter:site` y la meta de verificación de Search Console.
 
 ### Portada
 
@@ -291,6 +291,7 @@ Incluye la plantilla `sitemap-news.hbs` para Google News, el pie con enlaces leg
 - Teléfono y WhatsApp de avisos: **(402) 824-0388** (`https://wa.me/14028240388`, `tel:+14028240388`). Aparece en el pie, al final de cada nota y en `/contacto/`. Si cambia, edita `themes/tuhoy/partials/footer.hbs`, `themes/tuhoy/post.hbs` y `PHONE`/`PHONE_WA` en `scripts/legal_pages.py`.
 - Canal de WhatsApp (noticias, no es un chat): [whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45](https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45). En el pie, al final de cada nota, `/contacto/` y el boletín.
 - Instagram: [@tuhoynoticias](https://www.instagram.com/tuhoynoticias/). En el pie y al final de cada nota.
+- TikTok: [@tuhoynoticias](https://www.tiktok.com/@tuhoynoticias). En el pie, al final de cada nota y el boletín. Primera semana: 1 carrusel al día a mano, no el RSS entero.
 
 ## Correo
 
