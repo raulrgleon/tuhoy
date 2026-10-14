@@ -2,7 +2,8 @@
 """Autoriza @tuhoynoticias para que tiktok_posts.py publique.
 
 1. Crea una app en https://developers.tiktok.com/ (Content Posting API, Direct Post,
-   ámbito video.publish). Redirect URI: https://tuhoy.com/
+   ámbitos user.info.basic y video.upload; video.publish si el portal lo ofrece).
+   Redirect URI: https://tuhoy.com/
 2. Verifica la propiedad de https://tuhoy.com/ (URL properties) para que TikTok pueda
    leer las fotos de Ghost.
 3. Pon TT_CLIENT_KEY y TT_CLIENT_SECRET en .env.
@@ -26,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import tiktok_posts as tt  # noqa: E402
 import writer  # noqa: E402
 
-SCOPES = "user.info.basic,video.publish"
+SCOPES = "user.info.basic,video.upload,video.publish"
 REDIRECT = "https://tuhoy.com/"
 
 

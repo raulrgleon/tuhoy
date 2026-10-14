@@ -17,6 +17,8 @@ Autorizar una vez: python3 scripts/tiktok_oauth.py
 from __future__ import annotations
 
 import argparse
+import hashlib
+import io
 import json
 import os
 import stat
@@ -187,6 +189,44 @@ def feature_image(env: dict, post_id: str) -> str | None:
     return url or None
 
 
+def is_tiktok_photo(blob: bytes) -> bool:
+    """TikTok PULL_FROM_URL de fotos solo acepta JPEG o WebP, no PNG."""
+    if blob[:3] == b"\xff\xd8\xff":
+        return True
+    return blob[:4] == b"RIFF" and blob[8:12] == b"WEBP"
+
+
+def jpeg_for_tiktok(env: dict, image_url: str) -> str:
+    blob = daily.http_get(image_url)
+    if is_tiktok_photo(blob):
+        return image_url
+    from PIL import Image
+
+    im = Image.open(io.BytesIO(blob))
+    if im.mode in ("RGBA", "LA"):
+        bg = Image.new("RGB", im.size, (255, 255, 255))
+        bg.paste(im, mask=im.split()[-1])
+        im = bg
+    elif im.mode == "P":
+        im = im.convert("RGBA")
+        bg = Image.new("RGB", im.size, (255, 255, 255))
+        bg.paste(im, mask=im.split()[-1])
+        im = bg
+    elif im.mode != "RGB":
+        im = im.convert("RGB")
+    out = io.BytesIO()
+    im.save(out, "JPEG", quality=88, optimize=True)
+    ghost = daily.Ghost(env["GHOST_URL"], env["GHOST_ADMIN_API_KEY"])
+    name = "tiktok-" + hashlib.md5(blob[:128]).hexdigest()[:10] + ".jpg"
+    url = ghost.upload_image(out.getvalue(), name, "image/jpeg")
+    if not url:
+        raise RuntimeError("no se pudo convertir la foto a JPEG para TikTok")
+    if url.startswith("//"):
+        url = "https:" + url
+    log(f"foto convertida a JPEG: {url}")
+    return url
+
+
 def init_photo(token: str, image: str, t: dict, privacy: str, disable_comment: bool) -> str:
     data = api(
         "/v2/post/publish/content/init/",
@@ -283,6 +323,7 @@ def main() -> int:
             if not img:
                 log(f"sin foto, se omite: {t['titulo']}")
                 continue
+            img = jpeg_for_tiktok(env, img)
             post_id = publish(auth["access_token"], img, t)
         except RuntimeError as e:
             log(f"error al publicar {t['titulo']}: {e}")

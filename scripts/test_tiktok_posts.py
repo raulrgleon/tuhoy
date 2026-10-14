@@ -54,6 +54,11 @@ class TikTokPostsTest(unittest.TestCase):
         )
         self.assertEqual(tt.privacy_of(["FOLLOWER_OF_CREATOR"]), "FOLLOWER_OF_CREATOR")
 
+    def test_tiktok_acepta_jpeg_y_webp_no_png(self):
+        self.assertTrue(tt.is_tiktok_photo(b"\xff\xd8\xff\xdbrest"))
+        self.assertTrue(tt.is_tiktok_photo(b"RIFF....WEBP...."))
+        self.assertFalse(tt.is_tiktok_photo(b"\x89PNG\r\n\x1a\n"))
+
 
 if __name__ == "__main__":
     unittest.main()

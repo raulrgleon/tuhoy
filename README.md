@@ -218,10 +218,10 @@ Cuenta [tiktok.com/@tuhoynoticias](https://www.tiktok.com/@tuhoynoticias). Bio �
 
 [`scripts/tiktok_posts.py`](scripts/tiktok_posts.py) publica **los mismos posts que X, a la misma hora**: TikTok no arma vista previa con enlace, así que sube la foto de la nota (modo foto) y pone el texto + la URL en la descripción. Lee `data/x_queue.json` (solo lectura) y apunta lo publicado en `data/tt_queue.json`.
 
-- Corre cada 15 minutos desde el cron y **solo actúa si `TT_MODE=api`**.
+- Corre cada 15 minutos desde el cron y **solo actúa si `TT_MODE=api`** (encendido desde el 14-oct-2026, app sandbox TuHoy).
 - Mismas reglas que Instagram: como mucho **un post por pasada** y ninguno con más de 2 horas de retraso. Sin foto, se omite. Si hay 15 notas, salen 15 posts, uno cada 15 minutos, en la hora que ya marcó X.
-- TikTok exige una app en [developers.tiktok.com](https://developers.tiktok.com/) (Content Posting API, Direct Post, ámbito `video.publish`) y verificar que el dominio `tuhoy.com` es nuestro, para que puedan leer las fotos. Autorizar @tuhoynoticias: `python3 scripts/tiktok_oauth.py`. Tokens en `data/tt_auth.json` (gitignore).
-- Hasta que TikTok **audite** la app, la API solo deja publicar en **privado**. El script lo intenta público y, si TikTok bloquea, lo deja privado y lo anota en el log.
+- TikTok exige una app en [developers.tiktok.com](https://developers.tiktok.com/) (Content Posting API, Direct Post, ámbitos `video.upload` / `video.publish`) y verificar que el dominio `tuhoy.com` es nuestro, para que puedan leer las fotos. Autorizar @tuhoynoticias: `python3 scripts/tiktok_oauth.py`. Tokens en `data/tt_auth.json` (gitignore).
+- Hasta que TikTok **audite** la app de Production, la API solo deja publicar en **privado** (cuenta también en privado). El script lo intenta público y, si TikTok bloquea, lo deja privado y lo anota en el log. Las fotos PNG se convierten a JPEG: TikTok no acepta PNG al tirar de URL.
 
 ```bash
 python3 scripts/tiktok_posts.py --dry-run   # muestra lo que publicaría ahora
