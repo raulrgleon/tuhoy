@@ -17,6 +17,7 @@ import daily_edition as daily  # noqa: E402
 UPDATED = "5 de octubre de 2026"
 PHONE = "(402) 824-0388"
 PHONE_WA = "14028240388"
+WA_CHANNEL = "https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45"
 
 PAGES = {
     "contacto": (
@@ -24,7 +25,8 @@ PAGES = {
         "Cómo escribir a la redacción de TuHoy, enviar una corrección o proponer una historia.",
         """
 <p>En TuHoy leemos todos los mensajes. Escríbenos a <a href="mailto:{email}">{email}</a>.</p>
-<p><strong>WhatsApp y teléfono:</strong> <a href="https://wa.me/{phone_wa}">{phone}</a>. Puedes escribirnos por WhatsApp, mandar fotos o llamarnos al <a href="tel:+{phone_wa}">{phone}</a>.</p>
+<p><strong>Canal de WhatsApp:</strong> sigue las noticias en <a href="{wa_channel}">el canal de TuHoy</a>. Es un boletín: no se responde ahí.</p>
+<p><strong>WhatsApp y teléfono:</strong> <a href="https://wa.me/{phone_wa}">{phone}</a>. Para avisos, fotos o denuncias, escríbenos o llámanos al <a href="tel:+{phone_wa}">{phone}</a>.</p>
 <h2>Correcciones</h2>
 <p>Si encuentras un error en una nota, cuéntanos cuál es, en qué nota está y, si puedes, la fuente que lo demuestra. Revisamos cada aviso y, cuando corresponde, corregimos la nota e indicamos al final qué cambió.</p>
 <h2>Propón una historia</h2>
@@ -113,7 +115,9 @@ def main() -> int:
         page = {
             "title": title,
             "slug": slug,
-            "html": body.strip().format(email=email, updated=UPDATED, phone=PHONE, phone_wa=PHONE_WA),
+            "html": body.strip().format(
+                email=email, updated=UPDATED, phone=PHONE, phone_wa=PHONE_WA, wa_channel=WA_CHANNEL
+            ),
             "custom_excerpt": excerpt,
             "meta_description": excerpt,
             "status": "published" if args.publish else "draft",

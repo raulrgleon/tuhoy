@@ -36,6 +36,7 @@ MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto
          "septiembre", "octubre", "noviembre", "diciembre"]
 FACEBOOK = "https://www.facebook.com/tuhoynoticias"
 INSTAGRAM = "https://www.instagram.com/tuhoynoticias/"
+WHATSAPP_CANAL = "https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45"
 
 
 def log(msg: str) -> None:
@@ -98,7 +99,8 @@ def build_html(posts: list[dict], today: datetime) -> str:
     parts.append(
         "<hr><p>¿Te reenviaron este correo? Suscríbete gratis en "
         '<a href="https://tuhoy.com/#/portal/signup">tuhoy.com</a>. Síguenos en '
-        f'<a href="{FACEBOOK}">Facebook</a>, <a href="{INSTAGRAM}">Instagram</a> y <a href="https://x.com/TuHoy_">X</a>. '
+        f'<a href="{FACEBOOK}">Facebook</a>, <a href="{INSTAGRAM}">Instagram</a>, '
+        f'<a href="https://x.com/TuHoy_">X</a> y el <a href="{WHATSAPP_CANAL}">canal de WhatsApp</a>. '
         "¿Sabes algo que debamos contar? Escríbenos por "
         '<a href="https://wa.me/14028240388">WhatsApp al (402) 824-0388</a>.</p>'
     )

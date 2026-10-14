@@ -1,3 +1,8 @@
+## Checkpoint canal de WhatsApp (2026-10-14 ~09:40 Chicago · Cursor)
+- Raul creó el canal **TuHoy**: https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45
+- Tema 1.5.3: pie y final de cada nota. `/contacto/` y el boletín también. El chat `wa.me/14028240388` sigue para avisos; el canal no es un chat.
+- No invitar contactos personales. Publicar 1–2 notas al día en el canal (se pega a mano hasta que haya automatización).
+
 ## Checkpoint docs alineados al vivo (2026-10-13 ~15:15 Chicago · Cursor)
 - Rechequeo: `/noticias-google/` 200 (100 notas), `/news-sitemap.xml` → 301 a esa ruta, `facebook.com/tuhoynoticias` 200, tuhoy.com enlaza esa URL, `/venezuela/` 200.
 - HANDOFF del estudio, README ya en `64aec40`, `.env.example` (URL pública de Facebook) y canvas `tuhoy-estudio.canvas.tsx` coinciden con eso. Search Console: enviado `https://tuhoy.com/noticias-google/` el 13-oct ~15:16 (lectura de Google aún pendiente).
@@ -30,7 +35,7 @@
 - `scripts/daily_digest.py`: boletín «Lo que importa hoy» a las 07:00 Chicago como post de solo correo (`#boletin`) por Ghost + Mailgun. `DIGEST_MODE=on` en `.env`. Prueba enviada y entregada solo a Raul (post `6ace6f25099bf60001e24501`, segmento `label:prueba-boletin`). El primer envío real sale el 14-oct a las 07:00.
 - `scripts/indexnow.py` + Worker de Cloudflare `tuhoy-indexnow` (ruta `tuhoy.com/<clave>.txt`, id de ruta `21fe2733dff04632b0c148828397028a`). Se avisaron las 139 notas (202). Cron cada hora a los :05.
 - No se pudo: activar Crawler Hints (la API no lo permite con la clave global y el panel pide iniciar sesión) ni dar de alta en Bing Webmaster (pide iniciar sesión; IndexNow cubre la indexación). Google News ya no admite altas manuales.
-- Pendiente de los pasos siguientes del plan: canal de WhatsApp, guías propias de inmigración, noticias locales y promoción pagada opcional.
+- Pendiente de los pasos siguientes del plan: guías propias de inmigración, noticias locales y promoción pagada opcional. Canal de WhatsApp hecho el 14-oct.
 
 ## Checkpoint notas sin foto (2026-10-13 · Cursor/Claude)
 - Problema: 4 notas publicadas sin portada, así que Facebook (y X) mostraban el logo. Tres eran de Univision, que sirve sus fotos en AVIF: Ghost 6 las rechaza (415) y `source_photo` las etiquetaba como JPEG. La cuarta (`voz-baja-...`) tenía como fuente businesswire, que da 403.
