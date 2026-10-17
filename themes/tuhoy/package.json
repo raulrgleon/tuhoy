@@ -1,7 +1,7 @@
 {
     "name": "tuhoy",
     "description": "Tema editorial de TuHoy",
-    "version": "1.5.8",
+    "version": "1.5.9",
     "private": true,
     "engines": {
         "ghost": ">=5.0.0"
@@ -39,7 +39,7 @@
         "custom": {
             "edition_label": {
                 "type": "text",
-                "default": "Edición digital"
+                "default": "Edici\u00f3n digital"
             }
         }
     }
