@@ -1,7 +1,7 @@
 {
     "name": "tuhoy",
     "description": "Tema editorial de TuHoy",
-    "version": "1.5.5",
+    "version": "1.5.6",
     "private": true,
     "engines": {
         "ghost": ">=5.0.0"

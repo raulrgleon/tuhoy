@@ -35,7 +35,7 @@
     {{#get "posts" filter="tag:politica+tag:-inmigracion+featured:false" limit="5" include="tags,authors"}}
     {{#if posts}}
     <section class="th-section th-pattern-lead-side">
-        {{> "section-head" name="Política" url="/tag/politica/"}}
+        {{> "section-head" name="Política" section_url="/tag/politica/"}}
         <div class="th-split">
             <div>
                 {{#foreach posts limit="1"}}
@@ -55,7 +55,7 @@
     {{#get "posts" filter="tag:mundo+tag:-politica+tag:-economia+featured:false" limit="3" include="tags,authors"}}
     {{#if posts}}
     <section class="th-section th-pattern-columns">
-        {{> "section-head" name="Mundo" url="/tag/mundo/"}}
+        {{> "section-head" name="Mundo" section_url="/tag/mundo/"}}
         <div class="th-cols-3">
             {{#foreach posts}}
                 {{> "story-col"}}
@@ -68,7 +68,7 @@
     {{#get "posts" filter="tag:inmigracion+featured:false" limit="5" include="tags,authors"}}
     {{#if posts}}
     <section class="th-section th-pattern-feature-list" id="inmigracion">
-        {{> "section-head" name="Inmigración y Latinos" url="/tag/inmigracion/"}}
+        {{> "section-head" name="Inmigración y Latinos" section_url="/tag/inmigracion/"}}
         <div class="th-split">
             <div>
                 {{#foreach posts limit="1"}}
@@ -88,7 +88,7 @@
     {{#get "posts" filter="tag:economia+featured:false" limit="5" include="tags,authors"}}
     {{#if posts}}
     <section class="th-section th-pattern-feature-list">
-        {{> "section-head" name="Economía" url="/tag/economia/"}}
+        {{> "section-head" name="Economía" section_url="/tag/economia/"}}
         <div class="th-split th-split-reverse">
             <div class="th-stack">
                 {{#foreach posts from="2" to="5"}}
@@ -121,7 +121,7 @@
     {{#get "posts" filter="tag:tecnologia" limit="4" include="tags,authors"}}
     {{#if posts}}
     <section class="th-section th-pattern-compact">
-        {{> "section-head" name="Tecnología" url="/tag/tecnologia/"}}
+        {{> "section-head" name="Tecnología" section_url="/tag/tecnologia/"}}
         <div class="th-compact">
             {{#foreach posts}}
                 {{> "story-text" show_excerpt=true}}
@@ -134,7 +134,7 @@
     {{#get "posts" filter="tag:salud" limit="2" include="tags,authors"}}
     {{#if posts}}
     <section class="th-section th-pattern-feature-list">
-        {{> "section-head" name="Salud" url="/tag/salud/"}}
+        {{> "section-head" name="Salud" section_url="/tag/salud/"}}
         <div class="th-cols-2">
             {{#foreach posts}}
                 {{> "story-col"}}

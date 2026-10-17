@@ -1,0 +1,30 @@
+{
+  "http": {
+    "routers": {
+      "tuhoy-canonical-http": {
+        "entryPoints": ["http"],
+        "rule": "Host(`www.tuhoy.com`) || (Host(`tuhoy.com`) && HeaderRegexp(`CF-Visitor`, `\"scheme\"\\s*:\\s*\"http\"`))",
+        "priority": 10000,
+        "middlewares": ["tuhoy-canonical"],
+        "service": "noop@internal"
+      },
+      "tuhoy-canonical-https": {
+        "entryPoints": ["https"],
+        "rule": "Host(`www.tuhoy.com`) || (Host(`tuhoy.com`) && HeaderRegexp(`CF-Visitor`, `\"scheme\"\\s*:\\s*\"http\"`))",
+        "priority": 10000,
+        "middlewares": ["tuhoy-canonical"],
+        "service": "noop@internal",
+        "tls": {}
+      }
+    },
+    "middlewares": {
+      "tuhoy-canonical": {
+        "redirectRegex": {
+          "regex": "^https?://(?:www\\.)?tuhoy\\.com(?::[0-9]+)?/(.*)",
+          "replacement": "https://tuhoy.com/${1}",
+          "permanent": true
+        }
+      }
+    }
+  }
+}

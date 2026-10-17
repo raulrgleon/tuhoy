@@ -318,6 +318,27 @@ def source_name(url: str, raw: str = "", fallback: str = "") -> str:
     return fallback or host
 
 
+def large_photo_candidates(raw: str, article_url: str, image_url: str) -> list[str]:
+    """Only declared srcset variants of the same source photo; never upscale."""
+    def identity(url):
+        parts=urllib.parse.urlsplit(url)
+        filename=parts.path.rsplit('/',1)[-1]
+        return parts.hostname, re.sub(r'-\d+x\d+(?=\.[a-zA-Z]+$)', '', filename)
+    target=identity(image_url); candidates=[]
+    for match in re.finditer(r'\bsrcset=["\']([^"\']+)',raw,re.I):
+        for entry in html.unescape(match.group(1)).split(','):
+            pieces=entry.strip().rsplit(None,1)
+            if len(pieces)!=2 or not re.fullmatch(r'\d+w',pieces[1]):continue
+            url=urllib.parse.urljoin(article_url,pieces[0]);width=int(pieces[1][:-1])
+            if width>=1200 and identity(url)==target and urllib.parse.urlsplit(url).scheme=='https':candidates.append((width,url))
+    return list(dict.fromkeys(u for _,u in sorted(candidates,reverse=True)))[:3]
+
+def photo_width(blob: bytes) -> int:
+    try:
+        from PIL import Image
+        with Image.open(io.BytesIO(blob)) as image:return image.width
+    except Exception:return 0
+
 def source_photo(article_url: str, raw: str | None = None) -> tuple[bytes, str, str, str] | None:
     """Foto de la nota original, con crédito al diario."""
     if raw is None:
@@ -343,6 +364,17 @@ def source_photo(article_url: str, raw: str | None = None) -> tuple[bytes, str, 
         return None
     if len(blob) < 8000:
         return None
+    # Prefer a genuine larger variant when the publisher explicitly provides it.
+    best_width=photo_width(blob)
+    if best_width and best_width<1200:
+        for candidate in large_photo_candidates(raw,article_url,img):
+            try:
+                larger=http_get(candidate,timeout=20,referer=article_url)
+                if len(larger)>20*1024*1024:continue
+                width=photo_width(larger)
+                if width>best_width and ghost_image(larger):blob,best_width=larger,width
+                if best_width>=1200:break
+            except Exception:continue
     image = ghost_image(blob)
     if not image:
         log(f"source photo formato no válido {img}")

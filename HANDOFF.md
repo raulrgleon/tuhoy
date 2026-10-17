@@ -252,3 +252,18 @@
 - Código y documentación publicados en main: f201e01380b412701ceb2be008fdd7e7bb064f8f. GitHub API confirmó ese SHA como cabecera remota tras push exitoso.
 - 18 archivos, 15 tests específicos aprobados, revisión staged de valores secretos y rutas excluidas pasó. Quedaron únicamente los tres grupos previos sin seguimiento (demo, guías, publicador de guías), preservados fuera de este commit.
 - No hubo despliegue adicional ni cambios a memoria global durante la publicación. Este registro documental cierra el checkpoint de publicación.
+
+## 2026-10-17 · Codex · revisión SEO solo lectura
+- Se revisaron portada, robots, sitemaps, 4 artículos de apertura, about, autor, categoría, canal Venezuela, URL inexistente y variantes HTTP/www. Sin cambios de configuración/código ni publicación; solo checkpoint.
+- Bien: index/follow, canonical HTTPS sin www, lang es, H1 de artículo, descripción, JSON-LD Article con autor/fechas/imagen y BreadcrumbList. Sitemap general respondió y contenía 200 posts; URL inexistente respondió 404.
+- Problemas comprobados: noticias-google incluye 100 URLs, 70 anteriores a ventana de 2 días, más antigua 11-oct (Google exige últimos 2 días); sitemap-news.hbs no filtra fecha. Seis cabeceras de sección y sus Más noticias enlazan a inicio en vez de categoría. http://tuhoy.com/ y https://www.tuhoy.com/ sirven 200 sin redirección, aunque canonical sí apunta al dominio HTTPS sin www. Tres de cuatro imágenes schema muestreadas son menores a 1200 px de ancho.
+- No se accedió a Search Console ni se midieron Core Web Vitals; no se afirma cantidad indexada, posicionamiento ni tráfico. Próximo: priorizar ventana News, enlaces de secciones y redirecciones; luego imágenes y datos Search Console con autorización. No commit/push.
+
+## 2026-10-17 · Codex · reparaciones SEO autorizadas
+- Fuente main a3e3ba0; estado inicial HANDOFF.md modificado y archivos previos no rastreados conservados. Respaldo /home/raul/tuhoy-seo-backup-20261017 (tema, daily_edition.py, HANDOFF). Sin cambios a DB ni fechas/URLs de artículos.
+- Tema 1.5.6 activado: upload/activate HTTP 200. sitemap-news.hbs filtra published_at >= now-2d, excluye #boletin y #resumen-automatico, limit 100. XML vivo: 30 noticias, todas dentro de 48 h; sitemap general preservado.
+- Corregida colisión de helper url con hash de partial mediante section_url. Verificación HTML: seis cabeceras y Más noticias ahora apuntan a /tag/...; cada enlace dejó de volver a inicio.
+- Configuración Traefik file-only limitada a tuhoy.com/www.tuhoy.com, sin reiniciar proxy ni tocar otros routers. HTTP y www devuelven 308 a https://tuhoy.com conservando path/query; HTTPS principal devuelve 200, sin bucles. Original de protocolo externo obtenido de CF-Visitor. Archivo fuente deploy/traefik-tuhoy-canonical.json y activo /data/coolify/proxy/dynamic/tuhoy-canonical.yaml; no existía regla previa. Reversión: retirar únicamente ese archivo dinámico.
+- daily_edition.py ahora busca variantes srcset declaradas de la misma foto y verifica ancho real >=1200 si están disponibles. Límite tres candidatas, sin inferir URLs ni escalar. Fuentes de Cashea y Zelenskyy comprobadas: solo 960/1024 px disponibles mediante este mecanismo; no se alteraron fotos existentes ni se afirma resolver su resolución.
+- Pruebas: 18 unittest OK (3 nuevas selección de imágenes + 15 existentes); diff --check OK; GScan sin errores, advertencia preexistente de fuentes personalizadas. Validación viva de XML, enlaces y redirecciones mediante HTTPS. No se comprobó indexación Search Console ni Core Web Vitals.
+- Siguiente: registrar cambios autorizados en GitHub; para artículos con originales pequeños, obtener fotografías de mayor resolución con derechos adecuados. No actualizar memoria global automáticamente.

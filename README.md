@@ -462,3 +462,9 @@ Estado de dependencias: lock en `deploy/tiktok-video-requirements.lock`, hashes 
 
 ### Voz aprobada: Kokoro Alex (17-oct-2026)
 La narración nueva usa Kokoro-82M v1.0, voz `em_alex`, idioma español y velocidad 1.0, elegida por Raul tras escuchar las muestras. El motor ONNX corre localmente con dos hilos; no usa una API de pago. `kokoro_voice.py` genera las cuatro pistas de voz y valida audio finito/no silencioso antes del montaje. La versión de voz forma parte de la clave de caché, evitando reutilizar vídeos narrados con Piper. Los tiempos del vídeo se recalculan a partir de cada WAV real. Se conservan todas las imágenes, el diseño y los horarios. Lock/hashes en deploy/kokoro-*. Piper y el respaldo se conservan para reversión; no hay fallback silencioso entre voces.
+
+## SEO técnico (17-oct-2026)
+- Tema 1.5.6: sitemap News limitado a últimas 48 h, sin boletines ni resúmenes automáticos; conserva hasta 100 URLs, suficiente para la cadencia actual. No cambia el sitemap general ni retira artículos históricos del sitio.
+- `section-head` usa `section_url`, evitando colisión con el helper `url` de Ghost; cabeceras y Más noticias apuntan a categorías.
+- Redirección permanente 308 de HTTP/www a HTTPS sin www: `deploy/traefik-tuhoy-canonical.json`. Copia activa en `/data/coolify/proxy/dynamic/tuhoy-canonical.yaml`; el proveedor file de Traefik la recarga sin reinicio. El filtro CF-Visitor conserva el protocolo original del visitante detrás de Cloudflare y evita bucles HTTPS. Solo coincide con los hosts TuHoy. Reversión: retirar solo ese archivo dinámico.
+- Imágenes: se prefieren variantes srcset declaradas de la misma foto, con al menos 1200 px reales cuando la fuente las proporciona. Se verifican dimensiones; no se inventan URLs ni se amplían fotos pequeñas. Algunas fuentes solo ofrecen 960/1024 px: esos originales se conservan y no se afirma que cumplan la recomendación Discover.
