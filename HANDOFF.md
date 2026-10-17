@@ -247,3 +247,8 @@
 - Base main 46d5979; fetch confirmó HEAD y origin/main sin divergencia antes de commit. Revalidación de las 15 pruebas específicas OK y diff --check OK.
 - Se incluyen únicamente código, tests, unidades, locks/hashes y documentación del trabajo autorizado. Se preservan sin añadir archivos previos no relacionados: brand/tiktok-demo.mp4, content/guias/ y scripts/publish_guides.py. No se publican colas, credenciales, modelos descargados ni cachés de vídeo.
 - La memoria global no se modifica ni publica como parte de este commit de producto. Siguiente: verificar staged sin secretos, crear commit, push main y comprobar SHA remoto.
+
+### Resultado GitHub
+- Código y documentación publicados en main: f201e01380b412701ceb2be008fdd7e7bb064f8f. GitHub API confirmó ese SHA como cabecera remota tras push exitoso.
+- 18 archivos, 15 tests específicos aprobados, revisión staged de valores secretos y rutas excluidas pasó. Quedaron únicamente los tres grupos previos sin seguimiento (demo, guías, publicador de guías), preservados fuera de este commit.
+- No hubo despliegue adicional ni cambios a memoria global durante la publicación. Este registro documental cierra el checkpoint de publicación.
