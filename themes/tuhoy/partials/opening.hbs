@@ -1,0 +1,10 @@
+<section class="th-lead-grid" aria-label="Apertura">
+    {{#foreach posts limit="1"}}
+        {{> "story-lead"}}
+    {{/foreach}}
+    <div class="th-lead-rail">
+        {{#foreach posts from="2" to="4"}}
+            {{> "story-side"}}
+        {{/foreach}}
+    </div>
+</section>

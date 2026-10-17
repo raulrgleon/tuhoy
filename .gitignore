@@ -28,3 +28,9 @@ data/wa_queue.json
 data/mail-private/
 data/digest_state.json
 data/indexnow_state.json
+
+# Buffer TikTok runtime state (not source)
+data/buffer_tiktok.json
+data/buffer_tiktok.lock
+
+data/tiktok-media/

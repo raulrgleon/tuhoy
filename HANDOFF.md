@@ -163,3 +163,87 @@
 ## Siguiente paso
 - Revisar `logs/daily.log` tras las ediciones del 2026-10-11 (6, 12 y 18 h) y las líneas `[x]` de los posts.
 - Vigilar el gasto de X (~15 posts/día, 2 con enlace ≈ $18/mes).
+
+## Diagnóstico TikTok · 2026-10-15 06:53 Chicago · Codex
+- Pedido: revisar por qué no publica; solo diagnóstico, sin cambios de código/configuración ni publicaciones.
+- Fuente real: Dell /home/raul/tuhoy main 46d5979. Existían sin seguimiento brand/tiktok-demo.mp4, content/ y scripts/publish_guides.py; preservados.
+- TT_MODE=api y credencial sandbox; autorización presente con video.publish y refresh disponible. No se imprimieron ni renovaron credenciales. Expiración registrada 15-oct 15:29 UTC; no es la causa de los rechazos de esta mañana.
+- Cron TikTok instalado cada 15 min. Logs 06:15, 06:30 y 06:45 Chicago: HTTP403 unaudited_client_can_only_post_to_private_accounts. Historial local conserva dos éxitos, ambos 14-oct; hoy ninguno.
+- Cola a las 06:53: un pendiente dentro de ventana, cuatro futuros y catorce no publicados fuera de ventana de dos horas. No reencolar sin revisión editorial.
+- Documentación oficial de TikTok Content Sharing Guidelines cotejada: app sin auditar exige cuenta privada y SELF_ONLY. También excluye utilidad exclusiva interna y exige selección de privacidad/consentimiento por usuario. No basta cambiar claves: revisar elegibilidad y UX antes de prometer aprobación de Production.
+- El script intenta fallback privado; esto tampoco permite publicar con cuenta pública. No se cambió privacidad ni se ejecutó publicador. Siguiente paso: decidir flujo oficial compatible (publicación manual o integración aprobada); evaluar elegibilidad del producto antes de presentar auditoría. Estado del portal Production no comprobado en esta sesión.
+
+## Diagnóstico aviso email-articles · 2026-10-15 ~07:10 Chicago · Codex
+- Pedido: revisar Failed to start tuhoy-email-articles.service. Solo lectura operativa; sin reiniciar servicio, procesar manualmente mensajes, enviar correos ni cambiar código/configuración.
+- Servicio oneshot disparado por timer cada 60 s tras ejecución. Última ejecución observada 12:08:57 UTC terminó status=0/Intake completed; inactive(dead) es normal entre ejecuciones.
+- Journal desde 14-oct: 1.897 ejecuciones completas, 24 TimeoutError y 3 gaierror. Último fallo 15-oct 10:25:55 UTC (05:25 Chicago), seguido de éxitos. Registro solo guarda clase de excepción: no permite distinguir qué conexión IMAP/Ghost/SMTP agotó tiempo.
+- SQLite abierto mode=ro: dos submissions draft, una published, tres expired; 13 mensajes outbox marcados enviados y cero pendientes. No se leyeron contenidos/destinatarios ni tokens. Expired significa confirmación de autoría pendiente que superó 48 h; no equivale a un artículo confirmado perdido.
+- Código conserva cursor y procesa de nuevo tras fallo; requiere confirmación del autor antes de crear borrador Ghost. Estos datos no prueban recepción de un correo concreto sin cotejarlo.
+- Siguiente paso recomendado: instrumentar etapa del fallo sin datos personales, evaluar reintento acotado de red y alertar por fallos consecutivos. Si se investiga un artículo, localizarlo con remitente/fecha y no reactivar expirados ni publicar sin autorización.
+
+## 2026-10-17 · Codex · portada con vigencia · previo al despliegue
+- Autorización expresa de Raul para desplegar solo ajuste de portada, preservando funcionalidad y trabajo existente.
+- Base main 46d5979; cambios previos HANDOFF.md y archivos sin seguimiento conservados. Tema 1.5.5 preparado en home.hbs, package.json, partials/opening.hbs y partials/story-lead.hbs.
+- Respaldo del tema real activo, tema del repo y documentos: /home/raul/tuhoy-theme-backup-20261017. Verificado home.hbs presente. API de lectura de temas no permitió acceso; respaldo obtenido del volumen del proceso Ghost sin cambios al servicio.
+- GScan 6.6.1 sin errores (advertencia de fuentes personalizadas), sintaxis Handlebars y diff --check OK; lectura Ghost HTTP 200 con cuatro noticias del 17-oct mediante filtro de 48 h y exclusión #boletin.
+- Siguiente: activar tema y verificar HTML real, enlaces, imágenes, secciones y diseño. No push ni memoria global.
+
+### Resultado del despliegue de portada · 2026-10-17
+- Tema 1.5.5 subido y activado por scripts/upload_theme.py: HTTP 200/200. No hubo reinicio ni cambios a artículos, base de datos, cron o credenciales.
+- HTTPS público: portada, cuatro artículos de apertura y foto principal respondieron HTTP 200. HTML real muestra cuatro noticias del 17-oct, fecha antes del titular y secciones/boletín presentes. Revisión visual de escritorio confirmó imagen, columna lateral y fecha/titular correctos. Captura local /tmp/tuhoy-portada-publicada-20261017.png.
+- Incidencia de verificación local: urllib de macOS no encontró CA local; se verificó con curl manteniendo validación TLS. No se desactivó HTTPS.
+- No se simuló ausencia de noticias en producción ni se verificó visualmente móvil en este bloque. GScan previo sin errores; advertencia existente de fuentes personalizadas.
+- Prioridad reiterada por Raul: conservar funcionamiento, cambios acotados y respaldo antes de desplegar. Backup del tema activo en /home/raul/tuhoy-theme-backup-20261017; para revertir, restaurar tema desde active-theme y subirlo mediante upload_theme.py.
+- Cambios sin commit de esta tarea: home.hbs, package.json, partials/story-lead.hbs, nuevo partials/opening.hbs, README y este HANDOFF. Trabajo previo conservado; sin commit/push ni modificación de memoria central. Siguiente: ningún paso requerido para activar; commit/push solo con autorización.
+
+## 2026-10-17 · Codex · diagnóstico TikTok
+- Revisión sin cambios operativos: TT_MODE api, cliente sandbox, cron cada 15 min; token vigente hasta 18-oct. creator_info confirmó @tuhoynoticias y opciones PUBLIC_TO_EVERYONE/MUTUAL_FOLLOW_FRIENDS/SELF_ONLY. No se imprimieron secretos.
+- Cola registra dos posts del 14-oct; log confirma 10:32 y 10:34 Chicago. 216 de 218 errores de publicación contienen unaudited_client_can_only_post_to_private_accounts. Último observado 17-oct 11:30, incluso tras reintento SELF_ONLY.
+- Documentación oficial Content Sharing Guidelines: una app no auditada requiere cuenta privada además de post SELF_ONLY. La cuenta devuelve opciones de cuenta pública. Coincide con checkpoint de cambio a cuenta pública del 14-oct.
+- Script anuncia que saldrá privado antes de confirmar; esa línea no prueba éxito. Notas fallidas dejan de ser elegibles tras 2 h.
+- Sin publicar ni cambiar código, privacidad o configuración; solo checkpoint. Próximo paso: propietario decide si autoriza cuenta privada (afecta visibilidad del perfil y publicaciones) o continúa aprobación para mantener cuenta pública. No se promete aprobación.
+
+## 2026-10-17 · Codex · conexión Buffer / TikTok
+- Autorización de Raul para conectar solo TikTok, crear clave limitada de 30 días y configurar servidor; plan Free. Buffer confirmó canal @tuhoynoticias conectado, sin desconexión. Correo verificado por propietario. No se guardaron contraseñas ni claves en repo, logs o memoria.
+- Clave encriptada con systemd-creds en /home/raul/.config/tuhoy/buffer-api.cred; solo account:read/posts:read/posts:write, vence 16-nov-2026. Se entrega al proceso por LoadCredentialEncrypted; sin secreto persistente en texto plano.
+- Nuevo scripts/buffer_tiktok.py: canal fijo, comprueba identidad y conexión, reutiliza X_QUEUE sin modificar, una noticia por pasada y ventana 2 h. Estado atómico, lock, deduplicación contra Buffer y pausa ante resultado incierto/error; distingue sending/sent. Ejecuciones ociosas no llaman API.
+- Timer systemd tuhoy-buffer-tiktok.timer activo, cada 15 minutos; servicio corre como raul. Unidades copiadas a deploy/. Se retiró solo cron tiktok_posts.py, copia de crontab en /home/raul/tuhoy-buffer-backup-20261017. Resto de cron intacto. .gitignore excluye estado y lock.
+- Pruebas reales: cinco casos nuevos (cuenta incorrecta, job incierto, duplicado remoto, timeout, aceptación sin confirmación) y cinco existentes TikTok: 10/10 OK; diff --check OK. Consulta desde credencial systemd comprobó conexión. No nuevas dependencias de producto.
+- Prueba real: noticia de Matanzas enviada mediante API Buffer, recibida en modo automatic, estado sending sin error a las 12:00 Chicago; pendiente de confirmar sent/enlace público antes de afirmar éxito final. Si falla, el sistema pausa nuevos envíos.
+- Trabajo previo de portada y archivos no rastreados conservado. Sin commit/push ni actualización memoria global. Próximo paso: confirmar resultado de prueba, documentarlo aquí. Renovar clave antes de vencimiento.
+
+### Confirmación final Buffer · 2026-10-17 12:02 Chicago
+- Primera publicación confirmada como sent por API Buffer y como Post sent en UI: https://tiktok.com/@tuhoynoticias/video/7697682797913263373 (noticia de Matanzas). Estado local reconciliado mediante --reconcile-only, sin enviar otra noticia.
+- Timer activo y siguiente ejecución observada 12:15 Chicago; las futuras ejecuciones aún no fueron observadas en este bloque. Prueba real demuestra creación y finalización del primer envío, no garantiza futuras publicaciones.
+- 10 pruebas OK tras ajuste de consumo de API y opción --reconcile-only; diff --check OK. Credencial cifrada fuera del repo, portapapeles limpiado. Sin push/commit ni cambios a memoria central.
+- Siguiente: revisar journal del servicio tras próximas ediciones y renovar clave antes del 16-nov-2026. Estado failed/rejected/submitting incierto bloquea nuevos envíos hasta revisión para evitar duplicados. No se recuperaron noticias antiguas masivamente.
+# 2026-10-17 · Codex · formato combinado automático (en validación)
+- Raul autorizó aplicar vídeo editorial combinado y exigió imagen en todas las escenas. Respaldo previo scripts/unidad/estado: /home/raul/tuhoy-video-backup-20261017. Se conservaron cambios anteriores. Timer pausado durante cambio, servicio inactivo antes de sustituir script.
+- Nuevo tiktok_video.py genera 4 escenas verticales 1080x1920 con la imagen real del artículo en cada una, textos extractivos, fecha/crédito y voz sintética local. No inventa imágenes ni frases. Falta de imagen, texto suficiente o fallo de generación bloquea envío; sin fallback fotográfico.
+- Runtime aislado /home/raul/.local/share/tuhoy-video/runtime: Piper 1.8.0, Pillow 12.3.0; voz es_MX-ald-medium (model card cita dataset Unlicense). FFmpeg y fuentes Liberation instaladas desde Ubuntu. pip se actualizó en venv tras detectar vulnerabilidades; pip-audit posterior: sin vulnerabilidades conocidas. Lock de dependencias en deploy/.
+- Vídeos públicos en volumen Ghost content/media con nombres id+hash; solo artefactos de noticias públicas. Credenciales no cambiadas. URL valida HTTPS y origen; descarga de imagen limitada a 20 MB y ruta content/images. Estado/medios locales ignorados por Git.
+- buffer_tiktok.py ahora envía asset video, metadata isAiGenerated true, conservando idempotencia/lock y canal fijo. Primer vídeo renderizado: Matanzas, 32.9 s, H264/AAC, 1080x1920; revisión de cuatro frames confirmó imagen en todos. Decodificación completa sin errores.
+- 15 tests OK: 6 Buffer (incluye fallo render sin envío), 4 composición/validación y 5 TikTok existentes. diff --check OK.
+- Pendiente validar borrador de vídeo en Buffer; lo bloqueó un envío fotográfico iniciado a las 12:15 por el timer anterior, aún sending. No reenviar ese contenido ni tocar su estado sin respuesta de Buffer. Reactivar timer tras validación. Sin commit/push/memoria central.
+
+### Activación final del formato combinado · 2026-10-17 12:19 Chicago
+- Buffer confirmó el envío anterior de las 12:15 como sent (7697686451848301838), sin duplicarlo. Se probó la generación de la noticia Cashea como borrador: API Buffer confirmó status draft, schedulingType automatic y asset video/mp4.
+- Se eliminó únicamente ese borrador de prueba (respuesta DeletePostSuccess) y su registro local de prueba; X_QUEUE se conservó intacta, de modo que la noticia sigue elegible a su hora normal (16:15 Chicago). No se adelantó la publicación.
+- Timer reactivado y active; siguiente ejecución observada 12:30 Chicago. Dry-run sin noticias elegibles: cero llamadas API. Las próximas noticias usarán vídeo editorial; no se publicó de nuevo Matanzas.
+- Copia de seguridad y ruta de reversión: detener timer, restaurar buffer_tiktok.py desde /home/raul/tuhoy-video-backup-20261017 y reactivar timer. Conservar estado actual para no duplicar posts; no restaurar estado antiguo al revertir código.
+- Confirmado: 15 tests OK, pip check OK, pip-audit sin vulnerabilidades conocidas, MP4 H264/AAC 1080x1920 32.9 s decodificado íntegro, imagen en las cuatro escenas y acceso público al archivo HTTP 200. Buffer aceptó un vídeo como borrador; publicación real futura del nuevo formato todavía no observada en este bloque.
+- Sin commit/push ni cambios en memoria global. Preferencia duradera del usuario implementada: imagen del artículo en todas las escenas, sin fallback de solo foto si falla render. Voz local española mexicana, distinta a Paulina de la maqueta. README documenta funcionamiento, requisitos y limitaciones.
+
+## 2026-10-17 · Codex · Kokoro Alex activado
+- Raul eligió kokoro-alex tras escuchar muestras Dora/Alex y autorizó usarlo. Respaldo del renderer previo en /home/raul/tuhoy-kokoro-backup-20261017/tiktok_video.py; cambios anteriores preservados.
+- Nuevo scripts/kokoro_voice.py usa Kokoro-82M ONNX v1.0, em_alex, idioma es, speed 1.0, CPU 2 hilos; cuatro WAV generados con un solo modelo cargado. Adaptador float32 para entrada speed del export. Valida audio finito/no silencioso y salida limitada al caché de vídeos.
+- tiktok_video.py invoca el worker Kokoro, recalcula duraciones desde WAV e incluye versión de voz en hash/manifest para evitar reutilizar Piper. Imágenes en todas las escenas, diseño, canal y horario conservados; no se reenviaron noticias.
+- Validación real: nuevo vídeo Matanzas generado y servido por HTTPS; decodificado completo sin errores. Manifest confirma kokoro-em_alex-v1 e images_per_scene=true. 15 tests OK, diff --check y pip check OK; pip-audit de runtime Kokoro sin vulnerabilidades conocidas. Lock y hashes añadidos a deploy/kokoro-*. Sin nueva API de pago.
+- Timer pausado durante cambio y reactivado, active al cerrar. No se publicó de nuevo la noticia de prueba; futuros vídeos usarán Alex. Resultado de una publicación nueva en TikTok con Alex aún no observado en este bloque.
+- Reversión: detener timer, restaurar solo renderer desde respaldo y reactivar; conservar estado para no duplicar. Piper permanece instalado para reversión, sin fallback automático entre voces. Sin commit/push ni cambios a memoria central.
+
+## 2026-10-17 · Codex · publicación GitHub autorizada
+- Raul pidió actualizar GitHub con el trabajo de esta sesión: portada vigente, integración Buffer, vídeo editorial con imágenes en todas las escenas y Kokoro Alex.
+- Base main 46d5979; fetch confirmó HEAD y origin/main sin divergencia antes de commit. Revalidación de las 15 pruebas específicas OK y diff --check OK.
+- Se incluyen únicamente código, tests, unidades, locks/hashes y documentación del trabajo autorizado. Se preservan sin añadir archivos previos no relacionados: brand/tiktok-demo.mp4, content/guias/ y scripts/publish_guides.py. No se publican colas, credenciales, modelos descargados ni cachés de vídeo.
+- La memoria global no se modifica ni publica como parte de este commit de producto. Siguiente: verificar staged sin secretos, crear commit, push main y comprobar SHA remoto.

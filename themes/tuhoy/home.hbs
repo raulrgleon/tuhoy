@@ -17,18 +17,19 @@
 {{/get}}
 
 <div class="th-wrap">
-    {{!-- Destacar o editar una nota la sube: la última que destaques abre la portada. --}}
-    {{#get "posts" filter="featured:true" limit="4" order="updated_at desc" include="tags,authors"}}
-    <section class="th-lead-grid" aria-label="Apertura">
-        {{#foreach posts limit="1"}}
-            {{> "story-lead"}}
-        {{/foreach}}
-        <div class="th-lead-rail">
-            {{#foreach posts from="2" to="4"}}
-                {{> "story-side"}}
-            {{/foreach}}
-        </div>
-    </section>
+    {{!-- Solo noticias de las últimas 48 h; destacar prioriza sin renovar su fecha. --}}
+    {{#get "posts" filter="published_at:>=now-2d+tag:-hash-boletin" limit="4" order="featured desc,published_at desc" include="tags,authors"}}
+        {{#if posts}}
+            {{> "opening"}}
+        {{else}}
+            {{!-- Sin actividad reciente: mostrar lo último con aviso explícito. --}}
+            {{#get "posts" filter="tag:-hash-boletin" limit="4" order="published_at desc" include="tags,authors"}}
+                {{#if posts}}
+                    <p class="th-meta" role="status">No hay noticias nuevas en las últimas 48 horas. Estas son las últimas publicaciones.</p>
+                    {{> "opening"}}
+                {{/if}}
+            {{/get}}
+        {{/if}}
     {{/get}}
 
     {{#get "posts" filter="tag:politica+tag:-inmigracion+featured:false" limit="5" include="tags,authors"}}
