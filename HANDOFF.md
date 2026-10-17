@@ -280,3 +280,9 @@
 - Respaldo: /home/raul/tuhoy-seo-backup-20261017/default-before-adsense-script.hbs. Upload/activate HTTP 200/200; diff --check OK; portada, about y artículo respondieron 200 con una sola instancia del script dentro de head.
 - El código permite servir anuncios según aprobación y ajustes de AdSense; no se afirma que ya se muestren ni se cambió la cuenta, ubicaciones, CMP o datos de pago. AdSense y contenido de terceros no se controlan desde la plantilla.
 - Código y checkpoint se publican conforme autorización persistente de GitHub. Sin cambios a memoria global.
+
+## 2026-10-17 · Codex · ads.txt AdSense
+- Captura del propietario: propiedad verificada y revisión solicitada; aprobación pendiente.
+- Tema 1.5.9 añade themes/tuhoy/ads.txt con el registro público exacto indicado por Google; publicación nativa Ghost, upload/activate HTTP 200/200. Sin cambios de proxy, rutas, dependencias ni credenciales.
+- Comprobación externa desde Mac: ads.txt HTTP 200, text/plain y contenido exacto; portada/about/noticias-google HTTP 200. Solicitud urllib desde DNET recibió 403; no se cambió protección ni se afirma acceso de Googlebot verificado. diff --check OK. Archivo estático no requiere prueba unitaria.
+- Código publicado en main 6e10709. Los tres grupos previos sin seguimiento se conservan. Memoria global sin cambios. Siguiente: esperar rastreo y revisión de Google; no reenviar solicitud.
