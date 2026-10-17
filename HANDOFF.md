@@ -267,3 +267,10 @@
 - daily_edition.py ahora busca variantes srcset declaradas de la misma foto y verifica ancho real >=1200 si están disponibles. Límite tres candidatas, sin inferir URLs ni escalar. Fuentes de Cashea y Zelenskyy comprobadas: solo 960/1024 px disponibles mediante este mecanismo; no se alteraron fotos existentes ni se afirma resolver su resolución.
 - Pruebas: 18 unittest OK (3 nuevas selección de imágenes + 15 existentes); diff --check OK; GScan sin errores, advertencia preexistente de fuentes personalizadas. Validación viva de XML, enlaces y redirecciones mediante HTTPS. No se comprobó indexación Search Console ni Core Web Vitals.
 - Siguiente: registrar cambios autorizados en GitHub; para artículos con originales pequeños, obtener fotografías de mayor resolución con derechos adecuados. No actualizar memoria global automáticamente.
+
+## 2026-10-17 · Codex · verificación propiedad AdSense
+- Propietario mostró la pantalla de AdSense con identificador público de editor y métodos código/ads.txt/meta; continuidad del alta autorizada.
+- Tema 1.5.7 añade google-adsense-account a head de default.hbs, usando identificador público de la captura. Se eligió solo meta para verificar propiedad sin cargar el script publicitario ni activar anuncios automáticos.
+- Respaldo default-before-adsense.hbs en /home/raul/tuhoy-seo-backup-20261017. Upload/activate tema HTTP 200/200, diff --check OK; comprobado meta exactamente una vez en head de portada, about y artículo. Sin adsbygoogle.js en esas páginas.
+- Pendiente acción en cuenta de AdSense: seleccionar Etiqueta meta, marcar que se colocó y Verificar; luego solicitar revisión. No se afirma propiedad verificada por Google ni aprobación del sitio. No se aceptaron acuerdos ni se tocaron datos de pago.
+- Sin cambios a memoria central; cambios del tema se publican en GitHub conforme autorización persistente del propietario.
