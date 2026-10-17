@@ -274,3 +274,9 @@
 - Respaldo default-before-adsense.hbs en /home/raul/tuhoy-seo-backup-20261017. Upload/activate tema HTTP 200/200, diff --check OK; comprobado meta exactamente una vez en head de portada, about y artículo. Sin adsbygoogle.js en esas páginas.
 - Pendiente acción en cuenta de AdSense: seleccionar Etiqueta meta, marcar que se colocó y Verificar; luego solicitar revisión. No se afirma propiedad verificada por Google ni aprobación del sitio. No se aceptaron acuerdos ni se tocaron datos de pago.
 - Sin cambios a memoria central; cambios del tema se publican en GitHub conforme autorización persistente del propietario.
+
+## 2026-10-17 · Codex · código AdSense instalado
+- Propietario aportó el fragmento oficial de adsbygoogle.js para su editor público y pidió continuar la configuración. Tema 1.5.8 añade el script async crossorigin anonymous al head global, conservando meta de propiedad.
+- Respaldo: /home/raul/tuhoy-seo-backup-20261017/default-before-adsense-script.hbs. Upload/activate HTTP 200/200; diff --check OK; portada, about y artículo respondieron 200 con una sola instancia del script dentro de head.
+- El código permite servir anuncios según aprobación y ajustes de AdSense; no se afirma que ya se muestren ni se cambió la cuenta, ubicaciones, CMP o datos de pago. AdSense y contenido de terceros no se controlan desde la plantilla.
+- Código y checkpoint se publican conforme autorización persistente de GitHub. Sin cambios a memoria global.
