@@ -6,12 +6,43 @@ from email.message import EmailMessage
 from email.utils import getaddresses
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urlencode
 import daily_edition as d
 
 ADDRESS='articulos@tuhoy.com'
 ROLES={'Contributor':'draft','Author':'published','Editor':'published','Administrator':'published','Owner':'published'}
 MAX_BYTES=10*1024*1024
 class Rejected(Exception): pass
+
+def message_text(msg):
+ """Read body text without evaluating HTML; confirmations never use attachments."""
+ plain=[];rich=[]
+ for part in msg.walk():
+  if part.is_multipart() or part.get_content_disposition()=='attachment':continue
+  if part.get_content_type() not in ('text/plain','text/html'):continue
+  try:value=(part.get_payload(decode=True) or b'').decode(part.get_content_charset() or 'utf-8','replace')
+  except LookupError:continue
+  (plain if part.get_content_type()=='text/plain' else rich).append(value)
+ if plain:return '\n'.join(plain).strip()
+ parser=Text();parser.feed('\n'.join(rich));return ''.join(parser.parts).strip()
+
+def confirmation_token(msg):
+ subject=str(msg.get('Subject','')).strip()
+ # Common mail clients prepend several localized reply prefixes.
+ subject=re.sub(r'^(?:(?:re|aw|rv|fw|fwd):\s*)+','',subject,flags=re.I)
+ match=re.fullmatch(r'CONFIRMAR ([a-f0-9]{48})',subject,re.I)
+ if match:return match[1].lower(),True
+ if subject.casefold()!='confirma tu artículo en tuhoy':return None,False
+ text=message_text(msg)
+ first=next((line.strip() for line in text.splitlines() if line.strip()),'')
+ # A quoted token alone is insufficient: the reply must explicitly confirm.
+ explicit=re.fullmatch(r'(?:sí[, ]+)?(?:confirmo|confirmar|confirmado|confirm)(?:[.!])?',first,re.I)
+ tokens=set(re.findall(r'\bCONFIRMAR\s+([a-f0-9]{48})\b',text,re.I))
+ return (next(iter(tokens)).lower() if explicit and len(tokens)==1 else None),True
+
+def confirmation_link(token):
+ return 'mailto:'+ADDRESS+'?'+urlencode({'subject':'CONFIRMAR '+token,'body':'Confirmo la autoría y el envío de mi artículo.'})
+
 class Text(HTMLParser):
  def __init__(self): super().__init__(); self.parts=[]; self.blocked=0
  def handle_starttag(self,t,a):
@@ -84,12 +115,13 @@ CREATE TABLE IF NOT EXISTS outbox(id INTEGER PRIMARY KEY,recipient TEXT,subject 
   identity=str(msg.get('Message-ID','')).strip()
   key=hashlib.sha256((who+'\0'+identity).encode() if identity else raw).hexdigest()
   if self.db.execute('SELECT 1 FROM seen WHERE k=?',(key,)).fetchone():return
-  subject=str(msg.get('Subject','')).strip()
-  confirm=re.fullmatch(r'(?:Re:\s*)?CONFIRMAR ([a-f0-9]{48})',subject,re.I)
-  if confirm:
-   row=self.db.execute('SELECT * FROM submissions WHERE token=?',(confirm[1].lower(),)).fetchone()
+  token,is_confirmation=confirmation_token(msg)
+  if is_confirmation:
+   row=self.db.execute('SELECT * FROM submissions WHERE token=?',(token,)).fetchone() if token else None
    if row and row['sender']==who and row['expires']>=time.time() and row['stage']=='pending':
     self.db.execute("UPDATE submissions SET stage='approved' WHERE k=?",(row['k'],));self.db.commit()
+   elif row and row['sender']==who:
+    self.db.execute('INSERT INTO outbox(recipient,subject,body) VALUES(?,?,?)',(who,'TuHoy: confirmación no completada','No se confirmó ningún artículo. Usa el enlace del correo original y envía el mensaje que se abre. La confirmación vence en 48 horas; si venció, vuelve a enviar tu artículo. No cambies el asunto ni lo pegues como título de la noticia.'))
   else:
    try:
     pending=self.db.execute("SELECT count(*) FROM submissions WHERE sender=? AND stage='pending' AND expires>?",(who,int(time.time()))).fetchone()[0]
@@ -103,7 +135,7 @@ CREATE TABLE IF NOT EXISTS outbox(id INTEGER PRIMARY KEY,recipient TEXT,subject 
     self.db.execute('INSERT OR IGNORE INTO submissions VALUES(?,?,?,?,?,?,?,?,?,?)',(key,who,title,body,encoded,token,int(time.time()+172800),'pending',None,None))
     token=self.db.execute('SELECT token FROM submissions WHERE k=?',(key,)).fetchone()[0]
     outcome='publicado' if permit[1]=='published' else 'guardado como borrador para revisión'
-    self.db.execute('INSERT INTO outbox(recipient,subject,body) VALUES(?,?,?)',(who,'Confirma tu artículo en TuHoy',f'Artículo: {title}\nCon tu permiso actual será {outcome}.\n\nPara confirmar la autoría, envía un NUEVO correo a {ADDRESS} con este asunto exacto:\nCONFIRMAR {token}\n\nLa confirmación vence en 48 horas. Si no enviaste este artículo, ignora el mensaje.'))
+    self.db.execute('INSERT INTO outbox(recipient,subject,body) VALUES(?,?,?)',(who,'Confirma tu artículo en TuHoy',f'Artículo: {title}\nCon tu permiso actual será {outcome}.\n\nPulsa este enlace y ENVÍA el correo que se abre para confirmar:\n{confirmation_link(token)}\n\nTambién puedes responder a este correo escribiendo CONFIRMAR en la primera línea y conservando el mensaje original debajo.\n\nAlternativa manual: envía un NUEVO correo a {ADDRESS} con este asunto exacto:\nCONFIRMAR {token}\n\nLa confirmación vence en 48 horas. Si no enviaste este artículo, ignora el mensaje.'))
    except Rejected as ex:self.db.execute('INSERT INTO outbox(recipient,subject,body) VALUES(?,?,?)',(who,'TuHoy: revisa tu artículo',str(ex)))
   self.db.execute('INSERT INTO seen VALUES(?)',(key,));self.db.commit()
  def process(self):
@@ -119,12 +151,16 @@ CREATE TABLE IF NOT EXISTS outbox(id INTEGER PRIMARY KEY,recipient TEXT,subject 
    if posts:post=posts[0]
    else:
     body=row['body']
+    cover=None
     for n,(typ,b64) in enumerate(json.loads(row['images'])):
      extension={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[typ]
      url=self.ghost.upload_image(base64.b64decode(b64),'articulo-'+str(n)+'.'+extension,typ)
      if not url:raise RuntimeError('Image upload unavailable')
+     if cover is None:cover=url
      body+='<figure><img src="'+html.escape(url,quote=True)+'" alt="'+html.escape(row['title'],quote=True)+'"></figure>'
-    code,result=self.ghost.post_json('/posts/?source=html',{'posts':[{'title':row['title'],'slug':slug,'html':body,'status':'draft','authors':[{'id':permit[0]}],'tags':[{'name':'#correo-colaboradores'}]}]})
+    draft={'title':row['title'],'slug':slug,'html':body,'status':'draft','authors':[{'id':permit[0]}],'tags':[{'name':'#correo-colaboradores'}]}
+    if cover:draft.update(feature_image=cover,feature_image_alt=row['title'])
+    code,result=self.ghost.post_json('/posts/?source=html',{'posts':[draft]})
     if code not in (200,201):raise RuntimeError('Ghost draft creation failed')
     post=result['posts'][0]
    # Prevent edits/duplicate publication if a crash happened after finalizing.
@@ -150,24 +186,47 @@ CREATE TABLE IF NOT EXISTS outbox(id INTEGER PRIMARY KEY,recipient TEXT,subject 
    server.starttls(context=ssl.create_default_context());server.login(env['BREVO_SMTP_LOGIN'],env['BREVO_SMTP_KEY'])
    for r in rows:
     msg=EmailMessage();msg['From']='TuHoy <info@tuhoy.com>';msg['To']=r['recipient'];msg['Reply-To']=ADDRESS;msg['Subject']=r['subject'];msg['Auto-Submitted']='auto-generated';msg['Message-ID']=f'<tuhoy-mail-{r["id"]}@tuhoy.com>';msg.set_content(r['body'])
+    if r['subject']=='Confirma tu artículo en TuHoy':
+     tokens=re.findall(r'^CONFIRMAR ([a-f0-9]{48})$',r['body'],re.M)
+     if len(tokens)==1:
+      link=confirmation_link(tokens[0])
+      msg.add_alternative('<html><body><p>'+html.escape(r['body']).replace('\n','<br>')+'</p><p><a href="'+html.escape(link,quote=True)+'">Confirmar artículo: abrir correo</a></p><p>Envía el mensaje que se abre. El enlace por sí solo no publica nada.</p></body></html>',subtype='html')
     server.send_message(msg);self.db.execute('UPDATE outbox SET sent=1 WHERE id=?',(r['id'],));self.db.commit()
-def main():
- parser=argparse.ArgumentParser();parser.add_argument('--initialize',action='store_true');args=parser.parse_args()
- state=Path(os.environ.get('TUHOY_MAIL_STATE','/home/raul/tuhoy/data/mail-private'))
- state.mkdir(parents=True,exist_ok=True);os.chmod(state,0o700)
- with (state/'lock').open('w') as lock:
-  try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-  except BlockingIOError:return
-  env=d.load_env();app=Intake(state,d.Ghost(env['GHOST_URL'],env['GHOST_ADMIN_API_KEY']))
-  with imaplib.IMAP4_SSL('imap.gmail.com',timeout=25) as client:
-   client.login(os.environ['TUHOY_IMAP_USER'],os.environ['TUHOY_IMAP_PASSWORD']);client.select('INBOX',readonly=True)
+def intake_folders(client):
+ typ,entries=client.list()
+ if typ!='OK':raise RuntimeError('IMAP folder discovery failed')
+ folders=['INBOX']
+ for entry in entries or []:
+  if not isinstance(entry,bytes):continue
+  match=re.fullmatch(rb'\((.*?)\) (?:"(?:[^"\\]|\\.)*"|NIL) (.+)',entry)
+  if not match:continue
+  flags=match[1].lower().split();wire=match[2].decode('ascii')
+  name=wire.strip('"').lower().split('/')[-1]
+  if b'\\noselect' in flags:continue
+  if b'\\junk' in flags or name in ('spam','junk','junk email','junk e-mail'):
+   if wire not in folders:folders.append(wire)
+ if len(folders)==1:raise RuntimeError('No spam/junk mailbox discovered')
+ return folders
+
+def poll_mailbox(app,initialize=False):
+ with imaplib.IMAP4_SSL('imap.gmail.com',timeout=25) as client:
+  client.login(os.environ['TUHOY_IMAP_USER'],os.environ['TUHOY_IMAP_PASSWORD'])
+  folders=intake_folders(client)
+  for folder in folders:
+   typ,_=client.select(folder,readonly=True)
+   if typ!='OK':raise RuntimeError('IMAP mailbox selection failed')
    validity=client.response('UIDVALIDITY')[1][0].decode();nextuid=int(client.response('UIDNEXT')[1][0])
-   old=app.db.execute("SELECT v FROM meta WHERE k='validity'").fetchone()
-   if args.initialize or not old:
-    if old:raise RuntimeError('Already initialized; refusing to reset cursor')
-    app.db.executemany('INSERT INTO meta VALUES(?,?)',[('validity',validity),('last_uid',str(nextuid-1))]);app.db.commit();print('Mailbox baseline initialized; old mail untouched');return
+   # Keep the existing INBOX cursor; other folders have independent UID spaces.
+   suffix='' if folder=='INBOX' else ':'+hashlib.sha256(folder.encode()).hexdigest()
+   validity_key='validity'+suffix;cursor_key='last_uid'+suffix
+   old=app.db.execute('SELECT v FROM meta WHERE k=?',(validity_key,)).fetchone()
+   if initialize and old:raise RuntimeError('Already initialized; refusing to reset cursor')
+   if not old:
+    app.db.executemany('INSERT INTO meta VALUES(?,?)',[(validity_key,validity),(cursor_key,str(nextuid-1))]);app.db.commit()
+    print('Mailbox baseline initialized; historical mail untouched')
+    continue
    if old[0]!=validity:raise RuntimeError('Mailbox UIDVALIDITY changed; manual reconciliation required')
-   last=int(app.db.execute("SELECT v FROM meta WHERE k='last_uid'").fetchone()[0])
+   last=int(app.db.execute('SELECT v FROM meta WHERE k=?',(cursor_key,)).fetchone()[0])
    typ,ids=client.uid('search',None,'UID',str(last+1)+':*')
    if typ!='OK':raise RuntimeError('IMAP search failed')
    for uid in [u for u in ids[0].split() if int(u)>last][:100]:
@@ -179,11 +238,30 @@ def main():
      typ,items=client.uid('fetch',uid,'(BODY.PEEK[])')
      if typ!='OK':raise RuntimeError('IMAP fetch failed')
      raw=next(x[1] for x in items if isinstance(x,tuple));app.receive(raw)
-    app.db.execute("UPDATE meta SET v=? WHERE k='last_uid'",(uid.decode(),));app.db.commit()
-  app.process();app.deliver(env)
-  # Expired unconfirmed articles retain only audit metadata, never publish.
-  app.db.execute("UPDATE submissions SET stage='expired',body='',images='[]',token=NULL WHERE stage='pending' AND expires<?",(int(time.time()),));app.db.commit()
-  print('Intake completed')
+    app.db.execute('UPDATE meta SET v=? WHERE k=?',(uid.decode(),cursor_key));app.db.commit()
+ return not initialize
+
+def run_cycle(app,env,poll=poll_mailbox):
+ failure=None
+ try:
+  if poll(app) is False:return
+ except (TimeoutError,OSError,imaplib.IMAP4.abort) as ex:failure=ex
+ # A transient IMAP outage must not block already-confirmed work or receipts.
+ app.process();app.deliver(env)
+ app.db.execute("UPDATE submissions SET stage='expired',body='',images='[]',token=NULL WHERE stage='pending' AND expires<?",(int(time.time()),));app.db.commit()
+ if failure:raise failure
+ print('Intake completed')
+
+def main():
+ parser=argparse.ArgumentParser();parser.add_argument('--initialize',action='store_true');args=parser.parse_args()
+ state=Path(os.environ.get('TUHOY_MAIL_STATE','/home/raul/tuhoy/data/mail-private'))
+ state.mkdir(parents=True,exist_ok=True);os.chmod(state,0o700)
+ with (state/'lock').open('w') as lock:
+  try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+  except BlockingIOError:return
+  env=d.load_env();app=Intake(state,d.Ghost(env['GHOST_URL'],env['GHOST_ADMIN_API_KEY']))
+  if args.initialize:poll_mailbox(app,initialize=True)
+  else:run_cycle(app,env)
 if __name__=='__main__':
  try:main()
  except Exception as ex:
