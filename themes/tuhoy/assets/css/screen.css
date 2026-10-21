@@ -249,13 +249,26 @@ button:focus-visible {
     border-bottom: 1px solid var(--color-rule);
     transition: box-shadow var(--duration) ease;
 }
-/* Scroll state changes only paint: resizing this sticky header creates
-   scroll anchoring feedback and visible jumps around the threshold. */
+/* The fixed header animates independently of its reserved document space. */
+.th-header.has-scroll-space { position: fixed; left: 0; right: 0; }
+.th-header.is-measuring { position: fixed; left: 0; right: 0; visibility: hidden; pointer-events: none; }
+.th-header.is-measuring, .th-header.is-measuring * { transition: none !important; }
+.th-header-space { flex: none; overflow-anchor: none; }
+.th-header.is-compact .th-language-inner { padding-block: 0; }
+.th-language-inner { transition: padding var(--duration) var(--ease); }
+.th-header.is-compact .th-utility { max-height: 0; opacity: 0; border-bottom-width: 0; visibility: hidden; }
+.th-header.is-compact .th-masthead-inner { padding: 6px 0; }
+.th-header.is-compact .th-wordmark-link,
+.th-header.is-compact .th-masthead h1 { font-size: 1.7rem; }
+.th-header.is-compact .th-slogan { max-height: 0; opacity: 0; margin-top: 0; visibility: hidden; }
 .th-header.is-compact {
     box-shadow: 0 1px 0 var(--color-text);
 }
 
 .th-utility {
+    max-height: 80px;
+    overflow: hidden;
+    transition: max-height var(--duration) var(--ease), opacity var(--duration) ease, visibility var(--duration), border-bottom-width var(--duration);
     border-bottom: 1px solid var(--color-rule);
     background: var(--color-bg-soft);
 }
@@ -283,6 +296,9 @@ button:focus-visible {
 .th-masthead-inner > h1 { grid-column: 2; grid-row: 1; }
 .th-mast-search { grid-column: 3; grid-row: 1; justify-self: end; }
 .th-slogan {
+    max-height: 80px;
+    overflow: hidden;
+    transition: max-height var(--duration) var(--ease), opacity var(--duration) ease, margin-top var(--duration) var(--ease), visibility var(--duration);
     grid-column: 2;
     grid-row: 2;
     margin: 8px 0 0;

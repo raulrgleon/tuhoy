@@ -303,3 +303,8 @@
 - Fuente CSS local y servidor coincidían antes del cambio. Respaldo Dell /home/raul/tuhoy-scroll-backup-20261021/screen.css. Upload y activate Ghost 200; CSS público coincide byte a byte con fuente corregida. Sin dependencias nuevas, cambios en APIs, autenticación, contenido o datos. diff --check aprobado; no auditoría integral.
 - Base local/servidor 43f3aaa con cambios previos conservados; sin commit/push de esos cambios. Memoria global sin modificar.
 - Publicación autorizada posterior: se aplica la misma corrección a main actual en copia aislada; cambios anteriores de idiomas y otros trabajos locales se preservan sin incorporarlos a este commit.
+
+## 2026-10-21 · Codex · encogimiento fluido restaurado
+- A petición de Raul se reemplaza la corrección anterior que mantenía la cabecera expandida: vuelve a reducirse y ocultar franja superior/lema al bajar. La cabecera animada ahora es fija, con espacio de altura expandida reservado fuera de ella; su animación no altera el flujo ni el anclaje de scroll. Medición fuera de pantalla al cambiar tamaño, fuentes o texto; controles ocultos inert. Sin JS conserva sticky.
+- Producción: upload/activate 200. Chromium, móvil 390×844 (185→94 px) y escritorio 1440×900 (266→118 px): nueve posiciones, 30 muestras cada una, variación de scroll 0 px; alturas intermedias confirman animación y retorno al tamaño expandido. Sin desbordamiento horizontal. Safari/iPhone físico no probado.
+- Sintaxis JS y diff --check aprobados; sin nuevas dependencias, secretos ni cambios en datos/API. Respaldo previo: /home/raul/tuhoy-fluid-backup-20261021/{screen.css,main.js}. Cambios previos ajenos conservados.

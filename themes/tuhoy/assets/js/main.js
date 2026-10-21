@@ -64,15 +64,52 @@
     });
 
     if (header) {
+        // Reserve the expanded header's space once, outside the animated header.
+        // Its animation must never change the document height or scroll anchoring.
+        var space = document.createElement("div");
+        space.className = "th-header-space";
+        space.setAttribute("aria-hidden", "true");
+        header.before(space);
+        function measureHeader() {
+            var measure = header.cloneNode(true);
+            measure.classList.remove("is-compact");
+            measure.classList.add("is-measuring");
+            measure.removeAttribute("id");
+            measure.removeAttribute("data-header");
+            measure.querySelectorAll("[id]").forEach(function (el) { el.removeAttribute("id"); });
+            measure.setAttribute("aria-hidden", "true");
+            measure.inert = true;
+            document.body.appendChild(measure);
+            space.style.height = measure.getBoundingClientRect().height + "px";
+            measure.remove();
+        }
+        measureHeader();
+        header.classList.add("has-scroll-space");
+        var utility = header.querySelector(".th-utility");
+        function updateHeader() {
+            var compact = (window.scrollY || 0) > 150;
+            header.classList.toggle("is-compact", compact);
+            if (utility) utility.inert = compact;
+        }
         var ticking = false;
         window.addEventListener("scroll", function () {
             if (ticking) return;
             ticking = true;
             window.requestAnimationFrame(function () {
-                header.classList.toggle("is-compact", (window.scrollY || 0) > 150);
+                updateHeader();
                 ticking = false;
             });
         }, { passive: true });
+        var resizeFrame;
+        function scheduleMeasure() {
+            window.cancelAnimationFrame(resizeFrame);
+            resizeFrame = window.requestAnimationFrame(measureHeader);
+        }
+        window.addEventListener("resize", scheduleMeasure, { passive: true });
+        if (document.fonts) document.fonts.ready.then(scheduleMeasure);
+        new MutationObserver(scheduleMeasure).observe(header, { childList: true, characterData: true, subtree: true });
+        window.addEventListener("pageshow", updateHeader);
+        updateHeader();
     }
 
     var nativeShare = document.querySelector("[data-share-native]");
