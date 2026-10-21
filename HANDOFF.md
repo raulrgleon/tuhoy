@@ -308,3 +308,8 @@
 - A petición de Raul se reemplaza la corrección anterior que mantenía la cabecera expandida: vuelve a reducirse y ocultar franja superior/lema al bajar. La cabecera animada ahora es fija, con espacio de altura expandida reservado fuera de ella; su animación no altera el flujo ni el anclaje de scroll. Medición fuera de pantalla al cambiar tamaño, fuentes o texto; controles ocultos inert. Sin JS conserva sticky.
 - Producción: upload/activate 200. Chromium, móvil 390×844 (185→94 px) y escritorio 1440×900 (266→118 px): nueve posiciones, 30 muestras cada una, variación de scroll 0 px; alturas intermedias confirman animación y retorno al tamaño expandido. Sin desbordamiento horizontal. Safari/iPhone físico no probado.
 - Sintaxis JS y diff --check aprobados; sin nuevas dependencias, secretos ni cambios en datos/API. Respaldo previo: /home/raul/tuhoy-fluid-backup-20261021/{screen.css,main.js}. Cambios previos ajenos conservados.
+
+## 2026-10-21 · TuHoy solo en español
+- Solicitud de Raul: retirar cambio Español/English. Tema desplegado elimina bloque th-language-bar y carga de language.js; html lang=es. Main de GitHub ya carecía de los cambios de idiomas no publicados: se explicita es y se registra operación.
+- Ghost upload/activate 200. Prueba Chromium producción con preferencia guardada en y URL ?lang=en: español, sin selector, sin peticiones al script/caché de traducción; encogimiento de cabecera estable. diff --check aprobado.
+- Deshabilitado y detenido tuhoy-translation.timer, servicio detenido/inactive. No se borra caché ni contenido. Respaldo plantillas /home/raul/tuhoy-spanish-backup-20261021. Sin nuevas dependencias ni cambios de autenticación/API.
