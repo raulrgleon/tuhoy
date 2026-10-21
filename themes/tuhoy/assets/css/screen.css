@@ -249,13 +249,11 @@ button:focus-visible {
     border-bottom: 1px solid var(--color-rule);
     transition: box-shadow var(--duration) ease;
 }
+/* Scroll state changes only paint: resizing this sticky header creates
+   scroll anchoring feedback and visible jumps around the threshold. */
 .th-header.is-compact {
     box-shadow: 0 1px 0 var(--color-text);
 }
-.th-header.is-compact .th-utility { display: none; }
-.th-header.is-compact .th-masthead-inner { padding: 6px 0; }
-.th-header.is-compact .th-wordmark-link,
-.th-header.is-compact .th-masthead h1 { font-size: 1.7rem; }
 
 .th-utility {
     border-bottom: 1px solid var(--color-rule);
@@ -294,7 +292,6 @@ button:focus-visible {
     font-size: clamp(.95rem, 1.6vw, 1.15rem);
     color: var(--color-text-2);
 }
-.th-header.is-compact .th-slogan { display: none; }
 @media (min-width: 900px) {
     .th-menu-toggle,
     .th-mast-search { display: none; }
@@ -866,8 +863,6 @@ button:focus-visible {
     }
     .th-masthead-inner { padding: 14px 0; }
     .th-nav { display: none; }
-    .th-header.is-compact .th-nav { display: none; }
-    .th-header.is-compact .th-masthead-inner { padding: 5px 0; }
     .th-breaking-inner { gap: 12px; }
     .th-breaking-label { font-size: .68rem; }
     .th-breaking-list { gap: 20px; }
@@ -913,10 +908,6 @@ button:focus-visible {
         margin: 0;
         border: 0;
     }
-}
-
-@media (min-width: 720px) {
-    .th-header.is-compact .th-nav { display: block; }
 }
 
 .kg-width-wide img,
