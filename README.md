@@ -468,3 +468,12 @@ La narración nueva usa Kokoro-82M v1.0, voz `em_alex`, idioma español y veloci
 - `section-head` usa `section_url`, evitando colisión con el helper `url` de Ghost; cabeceras y Más noticias apuntan a categorías.
 - Redirección permanente 308 de HTTP/www a HTTPS sin www: `deploy/traefik-tuhoy-canonical.json`. Copia activa en `/data/coolify/proxy/dynamic/tuhoy-canonical.yaml`; el proveedor file de Traefik la recarga sin reinicio. El filtro CF-Visitor conserva el protocolo original del visitante detrás de Cloudflare y evita bucles HTTPS. Solo coincide con los hosts TuHoy. Reversión: retirar solo ese archivo dinámico.
 - Imágenes: se prefieren variantes srcset declaradas de la misma foto, con al menos 1200 px reales cuando la fuente las proporciona. Se verifican dimensiones; no se inventan URLs ni se amplían fotos pequeñas. Algunas fuentes solo ofrecen 960/1024 px: esos originales se conservan y no se afirma que cumplan la recomendación Discover.
+
+## Portada editorial 1.7 (2026-10-22)
+La apertura presenta el titular junto a la fotografía en escritorio y antes de ella en móvil, con tres noticias en «Lo esencial de hoy». El bloque «Hoy en TuHoy» muestra fechas de publicación, sin presentar noticias antiguas como alertas urgentes. El acceso al boletín y al canal existente de WhatsApp aparece después de la apertura.
+
+El formulario usa el flujo nativo de miembros de Ghost: solicita el correo y muestra carga, error o la petición de confirmar por correo. No crea un proveedor de correo adicional. Los miembros autenticados ven acceso a su cuenta. El enlace de privacidad se conserva; el formulario no añade suscripciones por defecto fuera del flujo de Ghost.
+
+Para mostrar «Vivir en Estados Unidos», la redacción debe publicar artículos con la etiqueta pública `vida-practica`. Para «Historias de nuestra comunidad», usar `comunidad`. Cada bloque aparece solo cuando tiene publicaciones; las noticias, fotos y autores de la maqueta no se publican como contenido real. Navigation sigue siendo la configuración editorial de Ghost, sin sobrescritura por el tema.
+
+La cabecera conserva su reducción animada con espacio reservado para evitar saltos. Antes de desplegar, validar con GScan para Ghost 6; después, comprobar portada, artículo, sección, menú móvil, Portal y formulario. Reversión de esta edición: volver a subir y activar el tema guardado en `/home/raul/tuhoy-design-backup-20261022/theme-before.zip`, sin restaurar bases de datos, colas ni configuración de miembros.

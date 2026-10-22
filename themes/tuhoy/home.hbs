@@ -1,13 +1,13 @@
 {{!< default}}
 
-{{#get "posts" limit="8" include="tags" order="published_at desc"}}
-<section class="th-breaking" id="ultima-hora" aria-label="Última hora">
+{{#get "posts" limit="5" include="tags" order="published_at desc"}}
+<section class="th-breaking" id="ultima-hora" aria-label="Últimas noticias">
     <div class="th-wrap th-breaking-inner">
-        <p class="th-breaking-label">Última hora</p>
+        <p class="th-breaking-label">Hoy en TuHoy</p>
         <ul class="th-breaking-list">
             {{#foreach posts}}
             <li>
-                <time datetime="{{date format="YYYY-MM-DDTHH:mmZ"}}">{{date format="HH:mm"}}</time>
+                <time datetime="{{date format="YYYY-MM-DDTHH:mmZ"}}">{{date format="DD MMM"}}</time>
                 <a href="{{url}}">{{title}}</a>
             </li>
             {{/foreach}}
@@ -30,6 +30,20 @@
                 {{/if}}
             {{/get}}
         {{/if}}
+    {{/get}}
+
+    {{> "reader-invitation"}}
+
+    {{!-- Solo contenido real etiquetado por la redacción; sin guías ficticias. --}}
+    {{#get "posts" filter="tag:vida-practica+tag:-hash-boletin" limit="3" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-practical">
+        {{> "section-head" name="Vivir en Estados Unidos" section_url="/tag/vida-practica/"}}
+        <div class="th-cols-3">
+            {{#foreach posts}}{{> "story-col"}}{{/foreach}}
+        </div>
+    </section>
+    {{/if}}
     {{/get}}
 
     {{#get "posts" filter="tag:politica+tag:-inmigracion+featured:false" limit="5" include="tags,authors"}}
@@ -105,6 +119,15 @@
     {{/if}}
     {{/get}}
 
+    {{#get "posts" filter="tag:comunidad+tag:-hash-boletin" limit="3" include="tags,authors"}}
+    {{#if posts}}
+    <section class="th-section th-community">
+        {{> "section-head" name="Historias de nuestra comunidad" section_url="/tag/comunidad/"}}
+        <div class="th-cols-3">{{#foreach posts}}{{> "story-col"}}{{/foreach}}</div>
+    </section>
+    {{/if}}
+    {{/get}}
+
     {{#get "posts" filter="tag:tangle+featured:false" limit="3" include="tags,authors"}}
     {{#if posts}}
     <section class="th-section th-pattern-opinion">
@@ -144,14 +167,4 @@
     {{/if}}
     {{/get}}
 
-    <section class="th-newsletter" aria-label="Boletín">
-        <div class="th-newsletter-inner">
-            <p class="th-kicker">Boletín</p>
-            <h2>La edición en el correo</h2>
-            <p>Un recorte del día, en español, cuando haya algo que merezca la pena.</p>
-            {{#if @site.members_enabled}}
-                <a class="th-btn" href="#/portal/signup" data-portal="signup">Suscribirse</a>
-            {{/if}}
-        </div>
-    </section>
 </div>

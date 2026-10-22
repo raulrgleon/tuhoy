@@ -7,7 +7,7 @@
                 {{#if @site.members_enabled}}
                     {{#unless @member}}
                         <a class="th-link-quiet" href="#/portal/signin" data-portal="signin">Entrar</a>
-                        <a class="th-link-accent" href="#/portal/signup" data-portal="signup">Suscribirse</a>
+                        <a class="th-link-accent" href="#/portal/signup" data-portal="signup">Recibir el resumen</a>
                     {{else}}
                         <a class="th-link-quiet" href="#/portal/account" data-portal="account">Cuenta</a>
                     {{/unless}}
@@ -60,7 +60,7 @@
                 <ul>
                     <li><a href="{{@site.url}}/about/">Quiénes somos</a></li>
                     {{#if @site.members_enabled}}
-                    <li><a href="#/portal/signup" data-portal="signup">Suscribirse</a></li>
+                    <li><a href="#/portal/signup" data-portal="signup">Recibir el resumen</a></li>
                     {{/if}}
                 </ul>
             </section>

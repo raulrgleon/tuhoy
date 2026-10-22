@@ -1,0 +1,25 @@
+<section class="th-reader-invitation" aria-labelledby="th-reader-title">
+    <div class="th-reader-copy">
+        <svg width="34" height="30" viewBox="0 0 34 30" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="1" y="4" width="32" height="22" rx="1"/><path d="m2 5 15 12L32 5M2 25l10-10m20 10L22 15"/></svg>
+        <div><h2 id="th-reader-title">TuHoy en tu correo</h2><p>Las noticias para entender el día, en español. Suscripción gratuita.</p></div>
+    </div>
+    <div class="th-reader-actions">
+        {{#if @site.members_enabled}}
+            {{#if @member}}
+                <a class="th-btn" href="#/portal/account" data-portal="account">Mi suscripción</a>
+            {{else}}
+                <form class="th-signup" data-members-form="subscribe">
+                    <div class="th-signup-fields">
+                        <label class="u-sr" for="th-reader-email">Tu correo electrónico</label>
+                        <input id="th-reader-email" type="email" name="email" data-members-email required autocomplete="email" placeholder="Tu correo electrónico">
+                        <button class="th-btn" type="submit"><span class="th-signup-idle">Recibir gratis</span><span class="th-signup-loading">Enviando…</span></button>
+                    </div>
+                    <p class="th-signup-success" role="status">Revisa tu correo para confirmar la suscripción.</p>
+                    <p class="th-signup-error" data-members-error role="alert"></p>
+                    <p class="th-signup-privacy">Puedes darte de baja cuando quieras. <a href="{{@site.url}}/privacidad/">Privacidad</a></p>
+                </form>
+            {{/if}}
+        {{/if}}
+        <a class="th-whatsapp-btn" href="https://www.whatsapp.com/channel/0029Vb9BtwBA89MgSh7P3a45" target="_blank" rel="noopener noreferrer">Seguir en WhatsApp <span aria-hidden="true">↗</span></a>
+    </div>
+</section>

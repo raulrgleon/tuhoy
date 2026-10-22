@@ -1,10 +1,22 @@
-<section class="th-lead-grid" aria-label="Apertura">
+<section class="th-opening" aria-label="Apertura">
     {{#foreach posts limit="1"}}
-        {{> "story-lead"}}
+    <article class="th-opening-story {{^if feature_image}}th-opening-no-image{{/if}}">
+        <div class="th-opening-copy">
+            {{> "story-kicker"}}
+            <h2 class="th-opening-title"><a href="{{url}}">{{title}}</a></h2>
+            <p class="th-opening-dek">{{excerpt words="32"}}</p>
+            {{> "story-meta"}}
+        </div>
+        {{> "story-media" eager=true ratio="standard" sizes="(max-width: 719px) 100vw, (max-width: 1099px) 48vw, 35vw"}}
+    </article>
     {{/foreach}}
-    <div class="th-lead-rail">
+    <aside class="th-essential" aria-labelledby="th-essential-title">
+        <h2 id="th-essential-title">Lo esencial de hoy</h2>
         {{#foreach posts from="2" to="4"}}
-            {{> "story-side"}}
+        <article class="th-essential-story">
+            {{> "story-kicker"}}
+            <h3><a href="{{url}}">{{title}}</a></h3>
+        </article>
         {{/foreach}}
-    </div>
+    </aside>
 </section>

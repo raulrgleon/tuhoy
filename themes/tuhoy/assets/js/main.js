@@ -119,6 +119,7 @@
     function setShareStatus(message) {
         if (!shareStatus) return;
         shareStatus.textContent = message;
+        window.dispatchEvent(new CustomEvent("tuhoy:share-status", {detail: shareStatus}));
         window.setTimeout(function () {
             shareStatus.textContent = "";
         }, 2200);
