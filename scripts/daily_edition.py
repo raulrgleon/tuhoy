@@ -1090,10 +1090,10 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
         if (item.get("country") == name or rx.search(f"{source_title} {title} {excerpt}")) and name not in tags
     ]
     # Sin portada, Facebook y X muestran el logo del sitio: se prueba la foto de la fuente,
-    # luego Commons, y si ninguna sube no se publica.
+    # sin sustituciones de Commons ni gráficos: si falta foto autorizada no se publica.
     img_url = None
     caption = ""
-    for pick in (lambda: source_photo(article_url), lambda: commons_image(*story_image_queries(title, text, slug_tag)), lambda: editorial_graphic(title)):
+    for pick in (lambda: source_photo(article_url),):
         picked = pick()
         if not picked:
             continue

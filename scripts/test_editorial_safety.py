@@ -6,7 +6,7 @@ import daily_edition as daily
 
 
 class EditorialSafetyTests(unittest.TestCase):
-    def submit(self, flagged, source_title="Una noticia importante de la comunidad"):
+    def submit(self, flagged, source_title="Una noticia importante de la comunidad", missing_photo=False):
         # Explicit title parameter exercises sensitive-news gating.
         item = {"title": source_title, "url": "https://example.com/news/", "desc": "Contexto real " * 60}
         state = {"seen_titles": [], "seen_urls": []}
@@ -17,7 +17,7 @@ class EditorialSafetyTests(unittest.TestCase):
             for name, value in {
                 "recent_style": [], "headline_es": source_title, "resolve_article_url": item["url"],
                 "extract_article": "Información real " * 80, "classify": ["Mundo"],
-                "source_photo": (b"image", "photo.jpg", "image/jpeg", "Foto de la fuente"),
+                "source_photo": None if missing_photo else (b"image", "photo.jpg", "image/jpeg", "Foto de la fuente"),
             }.items():
                 stack.enter_context(patch.object(daily, name, return_value=value))
             stack.enter_context(patch.object(daily, "DRY_RUN", False))
@@ -31,6 +31,12 @@ class EditorialSafetyTests(unittest.TestCase):
             result = daily.publish_item(ghost, item, False, [], state)
             status = ghost.post_json.call_args.args[1]["posts"][0]["status"] if ghost.post_json.called else None
             return result, status, state, review.called
+
+    def test_missing_source_photo_never_uses_generic_fallback(self):
+        with patch.object(daily,"commons_image",side_effect=AssertionError("generic fallback")), patch.object(daily,"editorial_graphic",side_effect=AssertionError("graphic fallback")):
+            result,status,_,_=self.submit(False,missing_photo=True)
+            self.assertFalse(result)
+            self.assertIsNone(status)
 
     def test_unverified_story_is_skipped_without_human_queue(self):
         result, status, state, queued = self.submit(True)
