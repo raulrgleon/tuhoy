@@ -15,7 +15,7 @@ class EditorialSafetyTests(unittest.TestCase):
         ghost.post_json.return_value = (201, {"posts": [{"slug": "noticia"}]})
         with ExitStack() as stack:
             for name, value in {
-                "headline_es": source_title, "resolve_article_url": item["url"],
+                "recent_style": [], "headline_es": source_title, "resolve_article_url": item["url"],
                 "extract_article": "Información real " * 80, "classify": ["Mundo"],
                 "source_photo": (b"image", "photo.jpg", "image/jpeg", "Foto de la fuente"),
             }.items():
@@ -63,9 +63,10 @@ class EditorialSafetyTests(unittest.TestCase):
                 stack.enter_context(patch.object(daily,name,return_value=value))
             stack.enter_context(patch.object(daily,"PAGINAS_INMIGRACION",[]))
             stack.enter_context(patch.object(daily,"DRY_RUN",False))
+            stack.enter_context(patch("editorial_selection.select", return_value=items[:4]))
             submit=stack.enter_context(patch.object(daily,"publish_item",side_effect=hold))
             daily.run(max_general=2,max_inmig=2,max_paises=1)
-            self.assertEqual(submit.call_count,5)
+            self.assertEqual(submit.call_count,4)
 
     def test_scheduled_edition_never_resets_editor_navigation(self):
         # Exercise an empty run, with all external work mocked.

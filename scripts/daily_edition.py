@@ -941,6 +941,15 @@ def commons_image(*queries: str) -> tuple[bytes, str, str, str] | None:
     return None
 
 
+def recent_style(ghost: Ghost) -> list[dict]:
+    code, response = ghost.get("/posts/?limit=8&filter=status:published&fields=title,html&formats=html")
+    if code >= 300:
+        raise writer.WriterError("no se pudo comparar el estilo reciente")
+    return [{"headline": str(p.get("title") or "")[:200],
+             "opening": re.sub(r"<[^>]+>", " ", p.get("html") or "")[:900]}
+            for p in response.get("posts", [])]
+
+
 def existing_titles(ghost: Ghost) -> list[str]:
     titles = []
     code, resp = ghost.get("/posts/?limit=100&fields=title,canonical_url,slug")
@@ -1054,7 +1063,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
             }
         ]
         try:
-            written = writer.write_article(sources, inmigracion=force_inmig, log=log)
+            written = writer.write_article(sources, inmigracion=force_inmig, log=log, recent=recent_style(ghost))
         except Exception as e:
             log(f"writer fail {title}: {e}")
     if not written:
@@ -1147,56 +1156,26 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
         # Navigation belongs to the editors in Ghost; never overwrite it on a cron run.
     known = existing_titles(ghost)
     published = 0
-    handled_inmig = 0
-
-    extras = []
-    for page in PAGINAS_INMIGRACION:
-        extras.append({"title": "", "url": page, "desc": "", "pub": "", "source": urllib.parse.urlparse(page).netloc})
-    for extra in extras:
-        try:
-            raw = http_get(extra["url"], timeout=18).decode("utf-8", "replace")
-        except Exception:
-            continue
-        extra["title"] = headline_es(page_title(raw) or extra["url"])
-        extra["desc"] = extract_article(extra["url"])[:500]
-        if len(extra["desc"]) < 280:
-            continue
-        before = len(state["seen_urls"])
-        if publish_item(ghost, extra, True, known=known, state=state):
-            published += 1
-        handled_inmig += int(DRY_RUN or len(state["seen_urls"]) > before)
-        if handled_inmig >= max_inmig:
-            break
-
-    inmig = collect(True, 16)
-    for item in inmig:
-        if handled_inmig >= max_inmig:
-            break
-        before = len(state["seen_urls"])
-        if publish_item(ghost, item, True, known=known, state=state):
-            published += 1
-        handled_inmig += int(DRY_RUN or len(state["seen_urls"]) > before)
-
-    general_ok = 0
-    for item in collect(False, 18):
-        if general_ok >= max_general:
-            break
-        if INMIG_RE.search(item["title"]):
-            continue
-        before = len(state["seen_urls"])
-        if publish_item(ghost, item, False, known=known, state=state):
-            published += 1
-        general_ok += int(DRY_RUN or len(state["seen_urls"]) > before)
-
-    paises_ok = 0
-    for item in collect(False, 15, feeds=list(FEEDS_PAISES)):
-        if paises_ok >= max_paises:
-            break
+    # One shared shortlist replaces fixed country/immigration publication quotas.
+    from editorial_selection import select
+    pool = collect(False, 30) + collect(True, 12) + collect(False, 15, feeds=list(FEEDS_PAISES))
+    candidates=[]; urls=set()
+    for item in pool:
+        if item["url"] in urls or item["url"] in state["seen_urls"]: continue
+        if any(similar(headline_es(item["title"]), k) for k in known): continue
+        urls.add(item["url"])
         item["require_body"] = True
-        before = len(state["seen_urls"])
+        candidates.append(item)
+    try:
+        selected = select(candidates, known, limit=min(4, max_general + max_inmig + max_paises)) if candidates else []
+    except Exception as exc:
+        log(f"skip edición: selección editorial no disponible ({type(exc).__name__})")
+        return 1
+    published_inmig = 0
+    for item in selected:
         if publish_item(ghost, item, bool(INMIG_RE.search(item["title"])), known=known, state=state):
             published += 1
-        paises_ok += int(DRY_RUN or len(state["seen_urls"]) > before)
+            published_inmig += int(bool(INMIG_RE.search(item["title"])))
 
     if DRY_RUN:
         log(f"[prueba] fin: {published} notas (no se publicó nada)")
@@ -1205,7 +1184,7 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
         {
             "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "published": published,
-            "inmigracion": min(published, max_inmig),
+            "inmigracion": published_inmig,
         }
     )
     state["seen_urls"] = state["seen_urls"][-400:]
@@ -1221,9 +1200,9 @@ def main() -> int:
     import argparse
 
     ap = argparse.ArgumentParser(description="Una edición de TuHoy (el cron la lanza a las 6, 12 y 18 h de Chicago).")
-    ap.add_argument("--inmig", type=int, default=2, help="notas de inmigración (la primera va destacada)")
-    ap.add_argument("--general", type=int, default=2, help="notas generales")
-    ap.add_argument("--paises", type=int, default=1, help="notas de Venezuela/Cuba")
+    ap.add_argument("--inmig", type=int, default=2, help="aporte al techo de edición; no reserva temática")
+    ap.add_argument("--general", type=int, default=2, help="aporte al techo de edición; máximo total 4")
+    ap.add_argument("--paises", type=int, default=1, help="aporte al techo; no reserva por país")
     ap.add_argument("--dry-run", action="store_true", help="muestra qué publicaría, sin redactar ni publicar")
     args = ap.parse_args()
     DRY_RUN = args.dry_run
