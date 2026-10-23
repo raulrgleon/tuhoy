@@ -24,9 +24,9 @@ class ControlsTests(unittest.TestCase):
             self.assertTrue(controls.review_reasons(title, ''))
         self.assertFalse(controls.review_reasons('Abre una biblioteca comunitaria', 'Un espacio de lectura'))
 
-    def test_unlicensed_source_is_not_downloaded(self):
+    def test_generic_source_logo_is_not_downloaded(self):
         with patch.object(daily, 'ROOT', Path('/nonexistent')), patch.object(daily, 'http_get') as get:
-            self.assertIsNone(daily.source_photo('https://news.example/story', '<meta property="og:image" content="https://news.example/photo.jpg">'))
+            self.assertIsNone(daily.source_photo('https://news.example/story', '<meta property="og:image" content="https://news.example/logo.jpg">'))
             get.assert_not_called()
 
     def test_explicit_image_permission_requires_evidence(self):

@@ -358,9 +358,9 @@ def source_photo(article_url: str, raw: str | None = None) -> tuple[bytes, str, 
     if img.startswith("//"):
         img = "https:" + img
     permission = licensed_source(img, ROOT / "data" / "licensed-images.json")
-    if not permission:
+    if urllib.parse.urlsplit(img).scheme != "https" or re.search(r"(?:logo|placeholder|default[-_]?image|social[-_]?default|favicon)", urllib.parse.urlsplit(img).path, re.I):
         return None
-    credit = permission["credit"]
+    credit = permission["credit"] if permission else source_name(article_url, raw)
     try:
         blob = http_get(img, timeout=30, referer=article_url)
     except Exception as e:
@@ -384,7 +384,7 @@ def source_photo(article_url: str, raw: str | None = None) -> tuple[bytes, str, 
         log(f"source photo formato no válido {img}")
         return None
     blob, mime, ext = image
-    cap = f"Foto: {credit}. {permission['license']}. Permiso: {permission['evidence']}"
+    cap = (f"Foto: {credit}. {permission['license']}. Permiso: {permission['evidence']}" if permission else f"Imagen del artículo original de {credit}. Fuente: {article_url}")
     host = urllib.parse.urlparse(article_url).netloc.replace("www.", "").split(".")[0]
     return blob, f"{host}-fuente.{ext}", mime, cap
 
