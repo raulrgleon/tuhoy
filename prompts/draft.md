@@ -16,27 +16,13 @@ Es lo único que sabes de la historia. Todo lo que escribas tiene que poder rast
 
 {sources}
 
-# Extensión
+# Extensión y forma
 
-Las fuentes suman unas {source_words} palabras. Elige el formato según lo que de verdad sostengan:
+Las fuentes suman unas {source_words} palabras. Elige la extensión que sostengan, sin mínimo artificial: breve para un hecho puntual, estandar para contexto suficiente, mayor solo para material abundante. Marca thin_sources cuando falte sustento; nunca rellenes para alcanzar una cifra.
 
-- **breve** (250-350 palabras): solo si los hechos disponibles son pocos.
-- **estandar** (500-700 palabras): la mayoría de las notas.
-- **mayor** (700-1000 palabras): solo si las fuentes traen contexto, cifras y voces suficientes.
+Titular específico de menos de 90 caracteres y entradilla que añada información. El cuerpo puede ser noticia directa, breve, explicación o servicio, según el material disponible. No impongas secciones «por qué importa», «qué significa para ti» o «qué viene». Usa subtítulos solo si ayudan a orientarse y listas solo para pasos o datos realmente comparables. Consecuencias y próximos pasos requieren respaldo explícito. No conviertas cada noticia en consejo ni en opinión.
 
-No rellenes. Si las fuentes no dan para 500 palabras sin repetir o especular, escribe una breve y marca `"thin_sources": true`.
-
-# Estructura obligatoria
-
-1. **Titular**: específico y humano, menos de 90 caracteres, sin clickbait.
-2. **Entradilla**: una o dos frases que añadan algo al titular.
-3. **Arranque**: escena, dato, persona o entrada directa, siempre con material de las fuentes.
-4. **Por qué importa ahora**: el párrafo que explica qué está en juego.
-5. **Cuerpo**: contexto, antecedentes y posiciones atribuidas.
-6. **Qué significa para ti**: consecuencias prácticas para el lector, solo con lo que digan las fuentes. Si las fuentes no permiten consejos concretos, explica a quién afecta y cómo.
-7. **Qué viene**: próximos pasos, fechas o preguntas abiertas. Cierra con una línea que resuene.
-
-En una breve puedes fundir los puntos 4 a 7 en dos o tres párrafos, pero sin perder el "por qué importa" ni el "qué viene".
+Antes de redactar identifica internamente la novedad, su fuente, su alcance y qué no sabemos. Abre con el hecho más relevante. No repitas titular, entradilla y primer párrafo con otras palabras.
 
 # Formato de salida
 
