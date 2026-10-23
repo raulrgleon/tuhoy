@@ -42,10 +42,11 @@ services:
     expose:
       - "2368"
     healthcheck:
-      test: ["CMD", "echo", "ok"]
-      interval: 5s
-      timeout: 20s
-      retries: 10
+      test: ["CMD", "node", "-e", "require('http').get({host:'127.0.0.1',port:2368,path:'/',headers:{'Host':'tuhoy.com','X-Forwarded-Proto':'https'}},r=>{r.resume();process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1)).setTimeout(5000,function(){this.destroy();process.exit(1)})"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 30s
 
   mysql:
     image: mysql:8.0

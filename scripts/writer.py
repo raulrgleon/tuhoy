@@ -93,11 +93,12 @@ def _post(url: str, headers: dict, body: dict, timeout: int = 180) -> dict:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
-            detail = e.read().decode(errors="replace")[:400]
+            # Provider bodies may contain request text or credential fragments.
+            e.read(4096)
             if e.code in (429, 500, 502, 503, 529) and attempt < 2:
                 time.sleep(8 * (attempt + 1))
                 continue
-            raise WriterError(f"HTTP {e.code}: {detail}") from e
+            raise WriterError(f"El proveedor de IA rechazó la solicitud (HTTP {e.code})") from e
         except (urllib.error.URLError, TimeoutError) as e:
             if attempt < 2:
                 time.sleep(5)
@@ -294,7 +295,10 @@ def factcheck_pass(cfg: dict, sources: list[dict], article: dict) -> list[dict]:
         article=json.dumps({k: article.get(k) for k in ("headline", "deck", "body")}, ensure_ascii=False, indent=1),
     )
     result = parse_json(chat(cfg, prompt, temperature=0.0, max_tokens=2000, reasoning="medium"))
-    return [c for c in result.get("unsupported") or [] if c.get("claim")]
+    claims = result.get("unsupported")
+    if not isinstance(claims, list) or any(not isinstance(c, dict) or not isinstance(c.get("claim"), str) or not c["claim"].strip() for c in claims):
+        raise WriterError("verificación de hechos incompleta: se retiene la publicación")
+    return claims
 
 
 def drop_claims(article: dict, claims: list[dict]) -> dict:
@@ -384,7 +388,7 @@ def write_article(sources: list[dict], inmigracion: bool = False, cfg: dict | No
         headline = headline[:89].rsplit(" ", 1)[0] + "…"
     # thin_sources solo indica que la nota es breve (casi siempre hay una única fuente);
     # a revisión van las notas con afirmaciones que el verificador no encontró en la fuente.
-    flagged = bool(unsupported)
+    flagged = bool(unsupported) or not cfg["factcheck"]
     article = {
         "headline": headline,
         "deck": re.sub(r"\s+", " ", final["deck"]).strip(),

@@ -34,3 +34,11 @@ data/buffer_tiktok.json
 data/buffer_tiktok.lock
 
 data/tiktok-media/
+
+# Editorial runtime permissions/provenance and locks
+data/licensed-images.json
+data/image-provenance.jsonl
+data/daily-edition.lock
+data/instagram.lock
+.env.*
+!.env.example

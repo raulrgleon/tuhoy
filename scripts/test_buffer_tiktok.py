@@ -2,6 +2,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).parent))
@@ -30,6 +31,12 @@ class BufferSafetyTests(unittest.TestCase):
     def test_remote_duplicate_is_not_republished(self):
         self.run_main([{'channel':self.channel},{'posts':{'edges':[{'node':{'text':'https://tuhoy.com/test/'}}]}}],self.loads)
         self.assertFalse(self.state.exists())
+    def test_failed_remote_post_is_visible_as_failure_without_resending(self):
+        def loads(p,d):
+            return {'items':{'old':{'status':'error','buffer_id':'old-job'}}} if p==self.state else self.loads(p,d)
+        with self.assertRaisesRegex(RuntimeError,'operator review required'):
+            self.run_main([{'channel':self.channel},{'post':{'id':'old-job','status':'error','externalLink':None}}],loads)
+        self.assertEqual(json.loads(self.state.read_text())['items']['old']['status'],'error')
     def test_network_timeout_leaves_uncertain_checkpoint(self):
         with patch.object(b,'video_asset',return_value='https://tuhoy.com/content/media/test.mp4'),patch.object(b.writer,'load_env',return_value={}):
             with self.assertRaises(TimeoutError): self.run_main([{'channel':self.channel},{'posts':{'edges':[]}},TimeoutError()],self.loads)
@@ -39,9 +46,43 @@ class BufferSafetyTests(unittest.TestCase):
             self.run_main([{'channel':self.channel},{'posts':{'edges':[]}},{'createPost':{'post':{'id':'buffer-job','status':'sending','externalLink':None,'schedulingType':'automatic'}}}],self.loads)
         self.assertEqual(json.loads(self.state.read_text())['items']['news']['status'],'sending')
 
+    def test_app_does_not_enable_tiktok_ai_generated_toggle(self):
+        with patch.object(b,'video_asset',return_value='https://tuhoy.com/content/media/test.mp4'),patch.object(b.writer,'load_env',return_value={}),patch.object(b,'api',side_effect=[{'channel':self.channel},{'posts':{'edges':[]}},{'createPost':{'post':{'id':'job','status':'sending','externalLink':None,'schedulingType':'automatic'}}}]) as api:
+            self.run_main(api,self.loads)
+            payload=api.call_args.args[1]['input']
+            self.assertIs(payload['metadata']['tiktok']['isAiGenerated'],False)
+            self.assertEqual(payload['channelId'],b.CHANNEL)
+            self.assertTrue(payload['assets'][0]['video']['url'].endswith('.mp4'))
+
     def test_render_failure_does_not_submit_or_checkpoint(self):
         with patch.object(b,'video_asset',side_effect=RuntimeError('missing image')):
             with self.assertRaises(RuntimeError): self.run_main([{'channel':self.channel},{'posts':{'edges':[]}}],self.loads)
         self.assertFalse(self.state.exists())
+    def test_provider_quota_sets_cooldown_and_records_failed_news_without_retry(self):
+        def loads(p,d):
+            return {'items':{'old':{'status':'error','buffer_id':'old-job','created_at':datetime.now(timezone.utc).isoformat()}}} if p==self.state else self.loads(p,d)
+        message='TikTok has detected a large number of posts. Wait 24 hours before trying again.'
+        with self.assertRaisesRegex(RuntimeError,'cooldown saved'):
+            self.run_main([{'channel':self.channel},{'post':{'id':'old-job','status':'error','externalLink':None,'error':{'message':message}}}],loads)
+        state=json.loads(self.state.read_text())
+        self.assertEqual(state['items']['old']['status'],'rate_limited')
+        self.assertTrue(b.cooling_down(state,datetime.now(timezone.utc)))
+    def test_cooldown_makes_zero_provider_calls(self):
+        def loads(p,d):
+            return {'items':{},'paused_until':(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()} if p==self.state else self.loads(p,d)
+        with patch.object(b,'api') as api:
+            self.run_main(api,loads);api.assert_not_called()
+    def test_rolling_daily_limit_stops_before_render_or_submit(self):
+        def loads(p,d):
+            return {'items':{str(i):{'status':'sent','created_at':datetime.now(timezone.utc).isoformat()} for i in range(10)}} if p==self.state else self.loads(p,d)
+        with patch.object(b,'writer') as writer,patch.object(b,'video_asset') as video:
+            writer.load_env.return_value={}
+            self.run_main([{'channel':self.channel}],loads)
+            video.assert_not_called()
+    def test_expired_cooldown_and_old_attempts_allow_new_news(self):
+        now=datetime.now(timezone.utc)
+        state={'paused_until':(now-timedelta(minutes=1)).isoformat(),'items':{'old':{'status':'rate_limited','created_at':(now-timedelta(hours=25)).isoformat()}}}
+        self.assertFalse(b.cooling_down(state,now))
+        self.assertEqual(b.recent_attempts(state,now),0)
 
 if __name__=='__main__': unittest.main()

@@ -477,3 +477,6 @@ El formulario usa el flujo nativo de miembros de Ghost: solicita el correo y mue
 Para mostrar «Vivir en Estados Unidos», la redacción debe publicar artículos con la etiqueta pública `vida-practica`. Para «Historias de nuestra comunidad», usar `comunidad`. Cada bloque aparece solo cuando tiene publicaciones; las noticias, fotos y autores de la maqueta no se publican como contenido real. Navigation sigue siendo la configuración editorial de Ghost, sin sobrescritura por el tema.
 
 La cabecera conserva su reducción animada con espacio reservado para evitar saltos. Antes de desplegar, validar con GScan para Ghost 6; después, comprobar portada, artículo, sección, menú móvil, Portal y formulario. Reversión de esta edición: volver a subir y activar el tema guardado en `/home/raul/tuhoy-design-backup-20261022/theme-before.zip`, sin restaurar bases de datos, colas ni configuración de miembros.
+
+## Controles editoriales y salud — 23-oct-2026
+Las notas sensibles requieren revisión humana en Ghost. Las fotos de terceros requieren autorización o licencia registrada; existe alternativa gráfica propia identificada. El cupo cuenta borradores retenidos, la edición usa bloqueo exclusivo y Ghost tiene chequeo HTTP real persistido en Coolify. Detalles de operación, pruebas y reversión: [HARDENING-2026-10-23](docs/HARDENING-2026-10-23.md).

@@ -20,6 +20,20 @@ STATE = ROOT / 'data/buffer_tiktok.json'
 CHANNEL = '6ad3a8ab778b240e2f3bbc64'
 ORG = '6ad3a73659096eb0b758abc7'
 FIELDS = 'id status schedulingType externalLink text'
+TERMINAL = ('sent', 'draft', 'rate_limited')
+
+def cooling_down(state, now):
+    until=state.get('paused_until')
+    return bool(until and datetime.fromisoformat(until)>now)
+
+def recent_attempts(state, now):
+    return sum(1 for item in state['items'].values()
+               if item['status']!='draft' and (not item.get('created_at') or
+               datetime.fromisoformat(item['created_at'])>now-timedelta(hours=24)))
+
+def quota_error(post):
+    message=((post.get('error') or {}).get('message') or '').lower()
+    return 'large number of posts' in message and '24 hours' in message
 
 def api(query, variables=None):
     key = (Path(os.environ['CREDENTIALS_DIRECTORY']) / 'buffer-api').read_text().strip()
@@ -51,10 +65,17 @@ def main():
         pre=tt.load(STATE, {'items':{}})
         recorded={h['id'] for h in tt.load(tt.TT_QUEUE,{'historial':[]})['historial']} | set(pre['items'])
         current=datetime.now(timezone.utc)
-        pending=any(i['status'] not in ('sent','draft') for i in pre['items'].values())
+        if cooling_down(pre,current):
+            print('TikTok provider cooldown active; no API requests and no posts'); return
+        pending=any(i['status'] not in TERMINAL for i in pre['items'].values())
         eligible=any(t['id'] not in recorded and (t['id']==args.post_id if args.post_id else timedelta(0)<=current-datetime.fromisoformat(t['hora'])<=timedelta(hours=2)) for t in tt.load(tt.X_QUEUE,{}).get('pendientes',[]))
         if not pending and not eligible:
             print('No eligible new news; no API requests'); return
+        if not pending and not args.reconcile_only:
+            limit=int(writer.load_env().get('TT_BUFFER_MAX_24H') or 10)
+            if not 1<=limit<=15: raise RuntimeError('TT_BUFFER_MAX_24H must be between 1 and 15')
+            if recent_attempts(pre,current)>=limit:
+                print('TikTok rolling 24h safety limit reached; no API requests'); return
     channel=api('query($id:ChannelId!){channel(input:{id:$id}){id name service isDisconnected isQueuePaused}}', {'id':CHANNEL})['channel']
     if channel['name']!='tuhoynoticias' or channel['service']!='tiktok' or channel['isDisconnected'] or channel['isQueuePaused']:
         raise RuntimeError('TikTok channel unavailable; no post sent')
@@ -62,13 +83,27 @@ def main():
     state=tt.load(STATE, {'items':{}})
     # Reconcile pending jobs before submitting another; never resend an uncertain job.
     for item in state['items'].values():
-        if item.get('buffer_id') and item['status'] not in ('sent','draft'):
-            post=api('query($id:PostId!){post(input:{id:$id}){'+FIELDS+'}}',{'id':item['buffer_id']})['post']
+        if item.get('buffer_id') and item['status'] not in TERMINAL:
+            post=api('query($id:PostId!){post(input:{id:$id}){'+FIELDS+' error{message}}}',{'id':item['buffer_id']})['post']
             item['status']=post['status']; item['url']=post.get('externalLink'); save(state)
             print('Buffer status:',post['status'],post.get('externalLink') or '')
-        if item['status'] not in ('sent','draft'):
+            if post['status']=='error' and quota_error(post):
+                # Confirmed terminal failure, never resubmit this old news. Resume only
+                # fresh eligible news after a full quiet 24h, not on every timer tick.
+                item['status']='rate_limited'
+                item['failure_kind']='provider_daily_post_limit'
+                state['paused_until']=(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()
+                save(state)
+                raise RuntimeError('TikTok daily quota reached; cooldown saved for 24 hours; failed news will not be resent')
+        if item['status'] not in TERMINAL:
+            if item['status'] in ('error','failed','rejected'):
+                raise RuntimeError('TikTok publishing failed; operator review required before any retry; no new post sent')
             print('Pending or uncertain submission; no new post sent'); return
     if args.reconcile_only: return
+    limit=int(writer.load_env().get('TT_BUFFER_MAX_24H') or 10)
+    if not 1<=limit<=15: raise RuntimeError('TT_BUFFER_MAX_24H must be between 1 and 15')
+    if recent_attempts(state,datetime.now(timezone.utc))>=limit:
+        print('TikTok rolling 24h safety limit reached; no new post sent'); return
     done={h['id'] for h in tt.load(tt.TT_QUEUE,{'historial':[]})['historial']} | set(state['items'])
     now=datetime.now(timezone.utc)
     queue=tt.load(tt.X_QUEUE,{}).get('pendientes',[])
@@ -83,7 +118,7 @@ def main():
     video=video_asset(t['id'])
     if not video.startswith('https://tuhoy.com/content/media/') or not video.endswith('.mp4'):
         raise RuntimeError('Missing TuHoy HTTPS video; no post sent')
-    payload={'channelId':CHANNEL,'text':tt.description_of(t),'assets':[{'video':{'url':video}}], 'metadata':{'tiktok':{'isAiGenerated':True}},'schedulingType':'automatic','mode':'shareNow','saveToDraft':args.draft}
+    payload={'channelId':CHANNEL,'text':tt.description_of(t),'assets':[{'video':{'url':video}}], 'metadata':{'tiktok':{'isAiGenerated':False}},'schedulingType':'automatic','mode':'shareNow','saveToDraft':args.draft}
     # Persist before network I/O. A lost response pauses publishing for reconciliation.
     state['items'][t['id']]={'status':'submitting','created_at':now.isoformat(),'url':t['url'],'format':'editorial-video-v1','video_url':video}; save(state)
     out=api('mutation($input:CreatePostInput!){createPost(input:$input){__typename ... on PostActionSuccess{post{'+FIELDS+'}} ... on MutationError{message}}}',{'input':payload})['createPost']

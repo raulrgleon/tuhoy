@@ -2,7 +2,7 @@
 """Edición diaria de TuHoy: fuentes reales -> artículos originales en español -> Ghost.
 
 Corre solo tres veces al día (cron 06:00, 12:00 y 18:00 America/Chicago, ~5 notas cada vez). Con clave de modelo (ver writer.py) redacta
-notas originales en dos pasadas; sin clave, cae al resumen extractivo. No inventa noticias: si no hay texto
+notas originales en dos pasadas; sin clave, no publica. No inventa noticias: si no hay texto
 útil en la fuente, descarta la pieza. Deduplica por URL y por título.
 """
 from __future__ import annotations
@@ -30,6 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import writer  # noqa: E402
+from editorial_controls import edition_lock, review_reasons, licensed_source, commons_license, record_image
 
 ROOT = Path("/home/raul/tuhoy")
 ENV_PATH = ROOT / ".env"
@@ -356,7 +357,10 @@ def source_photo(article_url: str, raw: str | None = None) -> tuple[bytes, str, 
     img = urllib.parse.urljoin(article_url, img)
     if img.startswith("//"):
         img = "https:" + img
-    credit = source_name(article_url, raw)
+    permission = licensed_source(img, ROOT / "data" / "licensed-images.json")
+    if not permission:
+        return None
+    credit = permission["credit"]
     try:
         blob = http_get(img, timeout=30, referer=article_url)
     except Exception as e:
@@ -380,9 +384,33 @@ def source_photo(article_url: str, raw: str | None = None) -> tuple[bytes, str, 
         log(f"source photo formato no válido {img}")
         return None
     blob, mime, ext = image
-    cap = f"Foto: {credit}."
+    cap = f"Foto: {credit}. {permission['license']}. Permiso: {permission['evidence']}"
     host = urllib.parse.urlparse(article_url).netloc.replace("www.", "").split(".")[0]
     return blob, f"{host}-fuente.{ext}", mime, cap
+
+
+def editorial_graphic(title):
+    """Original graphic, explicitly not a documentary photo."""
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        import textwrap
+        canvas = Image.new("RGB", (1200, 675), "#f2f6fb")
+        draw = ImageDraw.Draw(canvas)
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", 44)
+            small = ImageFont.truetype("DejaVuSans.ttf", 24)
+        except OSError:
+            font = small = ImageFont.load_default()
+        draw.rectangle((0, 0, 20, 675), fill="#2563a6")
+        draw.text((70, 65), "TuHoy", font=font, fill="#2563a6")
+        for i, line in enumerate(textwrap.wrap(title, width=38)[:6]):
+            draw.text((70, 180 + i * 62), line, font=font, fill="#172b45")
+        draw.text((70, 610), "Gráfico editorial · tuhoy.com", font=small, fill="#52657b")
+        buffer = io.BytesIO()
+        canvas.save(buffer, format="PNG")
+        return buffer.getvalue(), "tuhoy-grafico.png", "image/png", "Gráfico original de TuHoy. Ilustración editorial; no es una fotografía del hecho."
+    except (ImportError, OSError, ValueError):
+        return None
 
 
 def ghost_image(blob: bytes) -> tuple[bytes, str, str] | None:
@@ -864,7 +892,8 @@ def commons_candidates(query: str) -> list[dict]:
             continue
         meta = info.get("extmetadata") or {}
         license_short = (meta.get("LicenseShortName") or {}).get("value", "")
-        if license_short and not re.search(r"(pd|cc|public domain|cc0|cc-by|attribution)", license_short, re.I):
+        license_url = (meta.get("LicenseUrl") or {}).get("value", "")
+        if not commons_license(license_short, license_url):
             continue
         url = info.get("thumburl") or info.get("url")
         if not url:
@@ -877,6 +906,8 @@ def commons_candidates(query: str) -> list[dict]:
                 "url": url,
                 "mime": mime,
                 "license": license_short,
+                "license_url": license_url,
+                "source_page": info.get("descriptionurl") or "",
                 "artist": strip_html((meta.get("Artist") or {}).get("value") or "Wikimedia Commons"),
                 "score": score,
             }
@@ -903,7 +934,7 @@ def commons_image(*queries: str) -> tuple[bytes, str, str, str] | None:
             continue
         if len(blob) < 12000:
             continue
-        cap = f"Foto: {cand['artist']}. {cand['license'] or 'Wikimedia Commons'}."
+        cap = f"Imagen de archivo: {cand['artist']}. {cand['license']}. Licencia: {cand['license_url']}. Fuente: {cand['source_page']}. No es una fotografía del hecho."
         ext = "jpg" if "jpeg" in cand["mime"] else "png"
         safe = re.sub(r"[^a-z0-9]+", "-", cand["title"].lower())[:40].strip("-")
         return blob, f"{safe or 'tuhoy'}.{ext}", cand["mime"], cap
@@ -1046,7 +1077,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
     # luego Commons, y si ninguna sube no se publica.
     img_url = None
     caption = ""
-    for pick in (lambda: source_photo(article_url), lambda: commons_image(*story_image_queries(title, text, slug_tag))):
+    for pick in (lambda: source_photo(article_url), lambda: commons_image(*story_image_queries(title, text, slug_tag)), lambda: editorial_graphic(title)):
         picked = pick()
         if not picked:
             continue
@@ -1060,11 +1091,18 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
     if caption:
         body += f"\n<p><em>{html.escape(caption)}</em></p>"
 
-    # Las frases sin sustento ya se eliminaron; #revisar solo la pone en la cola de revisión humana.
+    reasons = review_reasons(source_title + " " + title, excerpt, force_inmig)
+    if reasons:
+        written["flagged"] = True
+    record_image(ROOT / "data" / "image-provenance.jsonl", {
+        "article_source": clean_source_url(article_url), "image": img_url,
+        "credit_and_license": caption, "recorded_at": datetime.now(timezone.utc).isoformat(),
+    })
+    # A final unresolved review flag requires an editor, never automatic publication.
     internal = [{"name": IA_TAG}]
     if written["flagged"]:
         internal.append({"name": REVIEW_TAG})
-        writer.queue_for_review(written, clean_source_url(article_url), "afirmaciones sin sustento")
+        writer.queue_for_review(written, clean_source_url(article_url), "; ".join(reasons) if reasons else "afirmaciones sin sustento")
 
     payload = {
         "posts": [
@@ -1075,7 +1113,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
                 "custom_excerpt": excerpt,
                 "meta_description": smart_cut(excerpt, 155),
                 "html": body,
-                "status": "published",
+                "status": "draft" if written["flagged"] else "published",
                 "featured": False,
                 "tags": [{"name": t} for t in tags] + internal,
                 "feature_image": img_url,
@@ -1090,14 +1128,14 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
         log(f"publish fail {code} {resp}")
         return False
     post = (resp.get("posts") or [{}])[0]
-    log(f"published {post.get('slug')} :: {title}")
+    log(f"{'held for review' if written['flagged'] else 'published'} {post.get('slug')} :: {title}")
     state["seen_urls"].append(item["url"])
     state["seen_urls"].append(article_url)
     state["seen_titles"].append(norm_title(source_title))
     known.append(source_title)
     if title != source_title:
         known.append(title)
-    return True
+    return not written["flagged"]
 
 
 def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
@@ -1106,9 +1144,10 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
     state = load_state()
     if not DRY_RUN:
         ensure_tags(ghost)
-        update_navigation(ghost)
+        # Navigation belongs to the editors in Ghost; never overwrite it on a cron run.
     known = existing_titles(ghost)
     published = 0
+    handled_inmig = 0
 
     extras = []
     for page in PAGINAS_INMIGRACION:
@@ -1122,17 +1161,21 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
         extra["desc"] = extract_article(extra["url"])[:500]
         if len(extra["desc"]) < 280:
             continue
+        before = len(state["seen_urls"])
         if publish_item(ghost, extra, True, known=known, state=state):
             published += 1
-            if published >= max_inmig:
-                break
+        handled_inmig += int(DRY_RUN or len(state["seen_urls"]) > before)
+        if handled_inmig >= max_inmig:
+            break
 
     inmig = collect(True, 16)
     for item in inmig:
-        if published >= max_inmig:
+        if handled_inmig >= max_inmig:
             break
+        before = len(state["seen_urls"])
         if publish_item(ghost, item, True, known=known, state=state):
             published += 1
+        handled_inmig += int(DRY_RUN or len(state["seen_urls"]) > before)
 
     general_ok = 0
     for item in collect(False, 18):
@@ -1140,18 +1183,20 @@ def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
             break
         if INMIG_RE.search(item["title"]):
             continue
+        before = len(state["seen_urls"])
         if publish_item(ghost, item, False, known=known, state=state):
-            general_ok += 1
             published += 1
+        general_ok += int(DRY_RUN or len(state["seen_urls"]) > before)
 
     paises_ok = 0
     for item in collect(False, 15, feeds=list(FEEDS_PAISES)):
         if paises_ok >= max_paises:
             break
         item["require_body"] = True
+        before = len(state["seen_urls"])
         if publish_item(ghost, item, bool(INMIG_RE.search(item["title"])), known=known, state=state):
-            paises_ok += 1
             published += 1
+        paises_ok += int(DRY_RUN or len(state["seen_urls"]) > before)
 
     if DRY_RUN:
         log(f"[prueba] fin: {published} notas (no se publicó nada)")
@@ -1183,18 +1228,11 @@ def main() -> int:
     args = ap.parse_args()
     DRY_RUN = args.dry_run
 
-    lock = Path("/tmp/tuhoy-daily.lock")
-    if lock.exists() and time.time() - lock.stat().st_mtime < 3600:
-        log("lock held, exit")
-        return 0
-    lock.write_text(str(os.getpid()), encoding="utf-8")
-    try:
+    with edition_lock(ROOT / "data" / "daily-edition.lock") as acquired:
+        if not acquired:
+            log("lock held, exit")
+            return 0
         return run(max_general=args.general, max_inmig=args.inmig, max_paises=args.paises)
-    finally:
-        try:
-            lock.unlink()
-        except FileNotFoundError:
-            pass
 
 
 if __name__ == "__main__":
