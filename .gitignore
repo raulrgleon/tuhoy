@@ -42,3 +42,10 @@ data/daily-edition.lock
 data/instagram.lock
 .env.*
 !.env.example
+
+# Threads/YouTube publishing state
+data/buffer-extra-channels.json
+data/buffer-threads.json
+data/buffer-youtube.json
+data/buffer-threads.lock
+data/buffer-youtube.lock

@@ -1,0 +1,9 @@
+[Unit]
+Description=TuHoy threads publishing check
+[Timer]
+OnCalendar=*:0/15
+RandomizedDelaySec=45
+Persistent=false
+Unit=tuhoy-buffer-threads.service
+[Install]
+WantedBy=timers.target

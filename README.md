@@ -480,3 +480,6 @@ La cabecera conserva su reducción animada con espacio reservado para evitar sal
 
 ## Controles editoriales y salud — 23-oct-2026
 Las notas sensibles requieren revisión humana en Ghost. Las fotos de terceros requieren autorización o licencia registrada; existe alternativa gráfica propia identificada. El cupo cuenta borradores retenidos, la edición usa bloqueo exclusivo y Ghost tiene chequeo HTTP real persistido en Coolify. Detalles de operación, pruebas y reversión: [HARDENING-2026-10-23](docs/HARDENING-2026-10-23.md).
+
+## Threads y YouTube
+Trabajador Buffer adicional para Threads y YouTube Shorts, con estados separados y sin recuperar noticias históricas. YouTube conectado y timer activo; Threads pendiente de autorización del propietario. [Estado e instalación](docs/THREADS-YOUTUBE.md).

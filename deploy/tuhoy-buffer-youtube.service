@@ -1,0 +1,13 @@
+[Unit]
+Description=TuHoy youtube via Buffer
+After=network-online.target
+[Service]
+Type=oneshot
+User=raul
+WorkingDirectory=/home/raul/tuhoy
+LoadCredentialEncrypted=buffer-api:/home/raul/.config/tuhoy/buffer-api.cred
+ExecStart=/usr/bin/python3 /home/raul/tuhoy/scripts/buffer_extra_channels.py --platform youtube
+UMask=0077
+TimeoutStartSec=12min
+Nice=10
+Environment=OMP_NUM_THREADS=2
