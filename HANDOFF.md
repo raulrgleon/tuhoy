@@ -346,3 +346,10 @@
 
 ## Preferencia vigente de publicación automática — 2026-10-23
 Por instrucción expresa del propietario se retiró la aprobación humana por sensibilidad. Las notas verificadas automáticamente se publican, también sobre inmigración, salud, elecciones u otros temas sensibles. Si la revisión automática queda sin resolver, se omite la nota y se marca procesada para evitar regenerarla; no se crea borrador ni tarea de revisión humana. Los borradores históricos se conservan sin publicarlos retroactivamente. Esta regla sustituye la retención por tema sensible descrita anteriormente. La IA no garantiza exactitud absoluta.
+
+## 2026-10-23 · Threads conectado y automatización activada
+- Propietario completó login y consentimiento en Meta para @tuhoynoticias. Antes de su continuación se prepararon solo lectura básica/publicación, desmarcando permisos opcionales de respuestas, estadísticas, búsqueda, borrado y ubicación. No se guardaron contraseña, códigos ni URL OAuth.
+- UI Buffer muestra canal Threads tuhoynoticias. GET oficial GraphQL con credencial cifrada systemd existente verificó Buffer ID 6adb068f778b240e2f99bbc0, serviceId 39319531047694225, service threads, conectado/sin pausa/sin bloqueo; validate_channel correcto.
+- Configuración privada activada desde 2026-10-23T07:03:44.507329+00:00; YouTube intacto. Respaldo privado /home/raul/tuhoy-threads-connect-backup-20261023T070344Z. Escritura atómica y permiso 0600. Timer tuhoy-buffer-threads.timer enabled/active, cada15min; primer servicio success/0 a 07:03:53 UTC.
+- Seis unittest específicos aprobados en Dell; dry-run eligible=0/unresolved=0. No se hizo post de prueba ni backfill. Falta confirmar primera publicación normal con estado sent y externalLink; conexión/timer activo no equivalen a post entregado. Las otras redes, colas y credenciales no se alteran.
+- Próximo: verificar el próximo envío normal; ante respuesta incierta reconciliar por lectura, nunca borrar estado para forzar reenvío.
