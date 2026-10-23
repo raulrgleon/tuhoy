@@ -29,21 +29,22 @@ class EditorialSafetyTests(unittest.TestCase):
             }))
             review = stack.enter_context(patch.object(daily.writer, "queue_for_review"))
             result = daily.publish_item(ghost, item, False, [], state)
-            status = ghost.post_json.call_args.args[1]["posts"][0]["status"]
+            status = ghost.post_json.call_args.args[1]["posts"][0]["status"] if ghost.post_json.called else None
             return result, status, state, review.called
 
-    def test_flagged_story_is_a_draft_and_not_counted_as_published(self):
+    def test_unverified_story_is_skipped_without_human_queue(self):
         result, status, state, queued = self.submit(True)
         self.assertFalse(result)
-        self.assertEqual(status, "draft")
-        self.assertTrue(queued)
+        self.assertIsNone(status)
+        self.assertFalse(queued)
         self.assertTrue(state["seen_urls"], "held stories must not be regenerated at each edition")
 
-    def test_sensitive_unflagged_story_is_held(self):
-        result, status, _, queued = self.submit(False, "ICE detiene a una familia")
-        self.assertFalse(result)
-        self.assertEqual(status, "draft")
-        self.assertTrue(queued)
+    def test_sensitive_verified_story_publishes_automatically(self):
+        for title in ["ICE detiene a una familia", "Nuevas vacunas", "Elecciones en Brasil", "Muere un actor"]:
+            result, status, _, queued = self.submit(False, title)
+            self.assertTrue(result)
+            self.assertEqual(status, "published")
+            self.assertFalse(queued)
 
     def test_unflagged_story_still_publishes(self):
         result, status, _, queued = self.submit(False)

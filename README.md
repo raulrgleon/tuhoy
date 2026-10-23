@@ -483,3 +483,6 @@ Las notas sensibles requieren revisión humana en Ghost. Las fotos de terceros r
 
 ## Threads y YouTube
 Trabajador Buffer adicional para Threads y YouTube Shorts, con estados separados y sin recuperar noticias históricas. YouTube conectado y timer activo; Threads pendiente de autorización del propietario. [Estado e instalación](docs/THREADS-YOUTUBE.md).
+
+## Preferencia vigente de publicación automática — 2026-10-23
+Por instrucción expresa del propietario se retiró la aprobación humana por sensibilidad. Las notas verificadas automáticamente se publican, también sobre inmigración, salud, elecciones u otros temas sensibles. Si la revisión automática queda sin resolver, se omite la nota y se marca procesada para evitar regenerarla; no se crea borrador ni tarea de revisión humana. Los borradores históricos se conservan sin publicarlos retroactivamente. Esta regla sustituye la retención por tema sensible descrita anteriormente. La IA no garantiza exactitud absoluta.

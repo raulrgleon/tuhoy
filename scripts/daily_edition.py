@@ -30,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import writer  # noqa: E402
-from editorial_controls import edition_lock, review_reasons, licensed_source, commons_license, record_image
+from editorial_controls import edition_lock, licensed_source, commons_license, record_image
 
 ROOT = Path("/home/raul/tuhoy")
 ENV_PATH = ROOT / ".env"
@@ -1061,6 +1061,13 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
         # Sin redacción no se publica: el resumen extractivo deja notas sin desarrollo.
         log(f"skip sin desarrollo: {title}")
         return False
+    if written.get("flagged", True):
+        # Failed automatic verification is skipped, never sent to a human queue.
+        log("skip: verificación automática no resuelta; no se crea borrador")
+        state["seen_urls"].extend([item["url"], article_url])
+        state["seen_titles"].append(norm_title(source_title))
+        known.append(source_title)
+        return False
     title = written["headline"]
     body = written["html"]
     excerpt = written["deck"]
@@ -1091,18 +1098,11 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
     if caption:
         body += f"\n<p><em>{html.escape(caption)}</em></p>"
 
-    reasons = review_reasons(source_title + " " + title, excerpt, force_inmig)
-    if reasons:
-        written["flagged"] = True
     record_image(ROOT / "data" / "image-provenance.jsonl", {
         "article_source": clean_source_url(article_url), "image": img_url,
         "credit_and_license": caption, "recorded_at": datetime.now(timezone.utc).isoformat(),
     })
-    # A final unresolved review flag requires an editor, never automatic publication.
     internal = [{"name": IA_TAG}]
-    if written["flagged"]:
-        internal.append({"name": REVIEW_TAG})
-        writer.queue_for_review(written, clean_source_url(article_url), "; ".join(reasons) if reasons else "afirmaciones sin sustento")
 
     payload = {
         "posts": [
@@ -1113,7 +1113,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
                 "custom_excerpt": excerpt,
                 "meta_description": smart_cut(excerpt, 155),
                 "html": body,
-                "status": "draft" if written["flagged"] else "published",
+                "status": "published",
                 "featured": False,
                 "tags": [{"name": t} for t in tags] + internal,
                 "feature_image": img_url,
@@ -1128,14 +1128,14 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
         log(f"publish fail {code} {resp}")
         return False
     post = (resp.get("posts") or [{}])[0]
-    log(f"{'held for review' if written['flagged'] else 'published'} {post.get('slug')} :: {title}")
+    log(f"published {post.get('slug')} :: {title}")
     state["seen_urls"].append(item["url"])
     state["seen_urls"].append(article_url)
     state["seen_titles"].append(norm_title(source_title))
     known.append(source_title)
     if title != source_title:
         known.append(title)
-    return not written["flagged"]
+    return True
 
 
 def run(max_general: int = 2, max_inmig: int = 2, max_paises: int = 1) -> int:
