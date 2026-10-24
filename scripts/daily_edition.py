@@ -1104,8 +1104,9 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
     if not img_url:
         log(f"skip sin foto: {title}")
         return False
-    if caption:
-        body += f"\n<p><em>{html.escape(caption)}</em></p>"
+    visible_caption = "" if caption.startswith("Imagen del artículo original de ") else caption
+    if visible_caption:
+        body += f"\n<p><em>{html.escape(visible_caption)}</em></p>"
 
     record_image(ROOT / "data" / "image-provenance.jsonl", {
         "article_source": clean_source_url(article_url), "image": img_url,
@@ -1126,7 +1127,7 @@ def publish_item(ghost: Ghost, item: dict, force_inmig: bool, known: list[str], 
                 "featured": False,
                 "tags": [{"name": t} for t in tags] + internal,
                 "feature_image": img_url,
-                "feature_image_caption": caption,
+                "feature_image_caption": visible_caption,
                 "feature_image_alt": title,
                 "visibility": "public",
             }
