@@ -243,12 +243,10 @@ def publish(env, ig, image_url, pie, state):
 
 
 def run(env, state, x_queue, now, dry_run=False):
-    done = {h["id"] for h in state["historial"] if h.get("ig_id")}
+    done = {h["id"] for h in state["historial"] if h.get("ig_id")} | set(state.get("isolated", {}))
     due = due_posts(x_queue, done, now)
     if dry_run:
         print(f"eligible={len(due)} pending={bool(state.get('pending'))} cooldown={state.get('cooldown_until', 'none')}")
-        return 0
-    if state.get("cooldown_until") and datetime.fromisoformat(state["cooldown_until"]) > now:
         return 0
     if not due and not state.get("pending"):
         return 0
@@ -264,9 +262,11 @@ def run(env, state, x_queue, now, dry_run=False):
             confirm(state, item, matches[0]["id"], now, matches)
             log("uncertain publication reconciled; no resend")
         else:
-            log("publication unresolved; automatic writes paused for manual reconciliation")
-            cooldown(state, now)
-            return 1
+            state.setdefault("isolated", {})[item["id"]] = pending
+            state.pop("pending", None)
+            save_state(state)
+            due = [t for t in due if t["id"] != item["id"]]
+            log("uncertain post isolated; other fresh news may continue")
     # Reconcile all eligible items before choosing one; do not let repeats block the queue.
     remaining = []
     for item in due:

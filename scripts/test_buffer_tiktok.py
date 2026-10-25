@@ -23,20 +23,21 @@ class BufferSafetyTests(unittest.TestCase):
         self.channel['name']='other'
         with self.assertRaises(RuntimeError): self.run_main([{'channel':self.channel}],self.loads)
         self.assertFalse(self.state.exists())
-    def test_uncertain_job_blocks_new_submission(self):
-        def loads(p,d): return {'items':{'old':{'status':'submitting'}}} if p==self.state else self.loads(p,d)
-        with patch.object(b,'api',return_value={'channel':self.channel}) as api:
-            self.run_main(api,self.loads if False else loads)
-            self.assertEqual(api.call_count,1)
+    def test_uncertain_job_is_not_resent_and_fresh_news_continues(self):
+        self.assert_fresh_continues({'status':'submitting'})
+    def assert_fresh_continues(self, old, paused=False):
+        def loads(p,d):
+            return {'items':{'old':dict(old)},'paused_until':(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()} if p==self.state else self.loads(p,d)
+        with patch.object(b,'video_asset',return_value='https://tuhoy.com/content/media/test.mp4'),patch.object(b.writer,'load_env',return_value={}):
+            self.run_main([{'channel':self.channel},{'posts':{'edges':[]}},{'createPost':{'post':{'id':'new-job','status':'sending','externalLink':None,'schedulingType':'automatic'}}}],loads)
+        data=json.loads(self.state.read_text())['items']
+        self.assertEqual(data['old']['status'],old['status'])
+        self.assertEqual(data['news']['buffer_id'],'new-job')
     def test_remote_duplicate_is_not_republished(self):
         self.run_main([{'channel':self.channel},{'posts':{'edges':[{'node':{'text':'https://tuhoy.com/test/'}}]}}],self.loads)
         self.assertFalse(self.state.exists())
-    def test_failed_remote_post_is_visible_as_failure_without_resending(self):
-        def loads(p,d):
-            return {'items':{'old':{'status':'error','buffer_id':'old-job'}}} if p==self.state else self.loads(p,d)
-        with self.assertRaisesRegex(RuntimeError,'operator review required'):
-            self.run_main([{'channel':self.channel},{'post':{'id':'old-job','status':'error','externalLink':None}}],loads)
-        self.assertEqual(json.loads(self.state.read_text())['items']['old']['status'],'error')
+    def test_failed_remote_post_is_preserved_and_does_not_block(self):
+        self.assert_fresh_continues({'status':'error','buffer_id':'old-job'})
     def test_network_timeout_leaves_uncertain_checkpoint(self):
         with patch.object(b,'video_asset',return_value='https://tuhoy.com/content/media/test.mp4'),patch.object(b.writer,'load_env',return_value={}):
             with self.assertRaises(TimeoutError): self.run_main([{'channel':self.channel},{'posts':{'edges':[]}},TimeoutError()],self.loads)
@@ -58,20 +59,10 @@ class BufferSafetyTests(unittest.TestCase):
         with patch.object(b,'video_asset',side_effect=RuntimeError('missing image')):
             with self.assertRaises(RuntimeError): self.run_main([{'channel':self.channel},{'posts':{'edges':[]}}],self.loads)
         self.assertFalse(self.state.exists())
-    def test_provider_quota_sets_cooldown_and_records_failed_news_without_retry(self):
-        def loads(p,d):
-            return {'items':{'old':{'status':'error','buffer_id':'old-job','created_at':datetime.now(timezone.utc).isoformat()}}} if p==self.state else self.loads(p,d)
-        message='TikTok has detected a large number of posts. Wait 24 hours before trying again.'
-        with self.assertRaisesRegex(RuntimeError,'cooldown saved'):
-            self.run_main([{'channel':self.channel},{'post':{'id':'old-job','status':'error','externalLink':None,'error':{'message':message}}}],loads)
-        state=json.loads(self.state.read_text())
-        self.assertEqual(state['items']['old']['status'],'rate_limited')
-        self.assertTrue(b.cooling_down(state,datetime.now(timezone.utc)))
-    def test_cooldown_makes_zero_provider_calls(self):
-        def loads(p,d):
-            return {'items':{},'paused_until':(datetime.now(timezone.utc)+timedelta(hours=24)).isoformat()} if p==self.state else self.loads(p,d)
-        with patch.object(b,'api') as api:
-            self.run_main(api,loads);api.assert_not_called()
+    def test_old_rate_limited_post_does_not_block_fresh_news(self):
+        self.assert_fresh_continues({'status':'rate_limited','buffer_id':'old-job'})
+    def test_old_global_cooldown_does_not_block_fresh_news(self):
+        self.assert_fresh_continues({'status':'error','buffer_id':'old-job'},paused=True)
     def test_rolling_daily_limit_stops_before_render_or_submit(self):
         def loads(p,d):
             return {'items':{str(i):{'status':'sent','created_at':datetime.now(timezone.utc).isoformat()} for i in range(10)}} if p==self.state else self.loads(p,d)

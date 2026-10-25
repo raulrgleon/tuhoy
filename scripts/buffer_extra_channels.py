@@ -70,11 +70,11 @@ def run(platform,dry_run=False):
         validate_channel(channel,platform)
         for item in pending:
             if not item.get('buffer_id'):
-                print(platform+': uncertain submission; operator reconciliation required');return
+                print(platform+': uncertain post isolated; other news may continue');continue
             post=buffer.api('query($id:PostId!){post(input:{id:$id}){id status externalLink}}',{'id':item['buffer_id']})['post']
             item['status']='sent' if post.get('status')=='sent' and post.get('externalLink') else post.get('status','unknown')
             item['external_link']=post.get('externalLink');save(path,state)
-            if item['status']!='sent':return
+            # This recorded item cannot block unrelated fresh articles.
         if not candidates:return
         if sum(datetime.fromisoformat(x['created_at'])>now-timedelta(hours=24) for x in items.values())>=10:return
         item=candidates[0]

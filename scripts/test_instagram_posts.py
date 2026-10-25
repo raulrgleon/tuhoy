@@ -52,9 +52,18 @@ class InstagramTest(unittest.TestCase):
             self.assertEqual(self.run_worker(), 1)
         self.state = json.loads(self.state_path.read_text())
         with patch.object(ig, 'recent_media', return_value=[]), patch.object(ig, 'graph') as api, patch.object(ig, 'publish') as publish:
-            self.assertEqual(self.run_worker(), 1)
+            self.assertEqual(self.run_worker(), 0)
             api.assert_not_called(); publish.assert_not_called()
-        self.assertIn('pending', self.state)
+        self.assertIn(ITEM["id"], self.state["isolated"])
+
+    def test_uncertain_old_post_does_not_block_a_different_article(self):
+        other=dict(ITEM,id='next',url='https://tuhoy.com/next/')
+        self.state['pending']={'item':ITEM,'stage':'publishing'}
+        with patch.object(ig,'recent_media',return_value=[]),patch.object(ig,'graph',return_value=QUOTA),patch.object(ig,'feature_image',return_value='image'),patch.object(ig,'publish',return_value='new-post') as publish:
+            self.assertEqual(ig.run(ENV,self.state,{'pendientes':[ITEM,other]},NOW),0)
+            self.assertIn(ITEM['id'],self.state['isolated'])
+            self.assertEqual(self.state['historial'][0]['id'],'next')
+            self.assertEqual(publish.call_count,1)
 
     def test_delayed_confirmation_after_restart(self):
         self.state['pending'] = {'item': ITEM, 'stage': 'publishing'}
@@ -68,10 +77,12 @@ class InstagramTest(unittest.TestCase):
             self.assertEqual(self.run_worker(), 0); api.assert_not_called()
         self.assertEqual(self.state['historial'][0]['duplicate_count'], 1)
 
-    def test_cooldown_makes_zero_requests(self):
+    def test_global_cooldown_does_not_hide_confirmed_media(self):
         self.state['cooldown_until'] = (NOW+timedelta(hours=24)).isoformat()
-        with patch.object(ig, 'graph') as api, patch.object(ig, 'recent_media') as recent:
-            self.assertEqual(self.run_worker(), 0); api.assert_not_called(); recent.assert_not_called()
+        with patch.object(ig,'recent_media',return_value=[MEDIA]),patch.object(ig,'graph') as api:
+            self.assertEqual(self.run_worker(),0)
+            api.assert_not_called()
+        self.assertEqual(self.state['historial'][0]['ig_id'],MEDIA['id'])
 
     def test_quota_exhausted_does_not_create_container(self):
         with patch.object(ig, 'recent_media', return_value=[]), patch.object(ig, 'graph', return_value={'data':[{'quota_usage':100,'config':{'quota_total':100}}]}), patch.object(ig, 'publish') as publish:
