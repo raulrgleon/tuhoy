@@ -389,3 +389,5 @@ Por instrucción expresa del propietario se retiró la aprobación humana por se
 - 104 tests locales (103OK/1omitido);114 servidorOK. Casos de fallo viejo, intento incierto, cooldown heredado, no duplicación y noticia distinta aprobados. Suite inicial servidor descubrió test de licencia previo desactualizado: sincronizado el test ya publicado de logo; no se alteró política de foto en esta tarea.
 - Desplegado y ejecutados trabajadores TikTok/Threads/YouTube: success0, timers enabled. Instagram ejecutado sin error. TikTok nuevo artículo6add38d3374e750001ce34c4 aceptado por Buffer6add4fcabd33ce99c34b4e1d, GET sending sin error, aún sin externalLink: no afirmar entrega final hasta sent.
 - Respaldo de versión previa desde HEAD en /home/raul/tuhoy-no-channel-pause-backup-20261024/*.before.py; estados existentes preservados. Próximo: reconciliación habitual de ese envío; errores individuales no vuelven a congelar la cola.
+
+- Confirmación final del nuevo TikTok: GET sent y externalLink https://tiktok.com/@tuhoynoticias/video/7700398616980065549, sin error. La entrega real ya está confirmada; se sustituye el sending anterior de esta muestra.
