@@ -1,3 +1,10 @@
+## Checkpoint correcciones del tema (2026-11-05 Chicago · Codex)
+- Rama fix/theme-interactions desde e166f89. Usuario autorizó corregir y subir a GitHub.
+- Tema 1.7.1. Escape solo restaura foco al cerrar un menú abierto. Copiar/compartir informa errores y conserva cancelación silenciosa. Temporizador de estado se renueva con cada mensaje.
+- Imágenes de story-lead usan carga diferida; opening conserva prioridad alta. CSS ya reserva proporciones.
+- Pruebas de regresión scripts/test_theme_interactions.cjs y node --check pasaron. git diff --check pasó.
+- Pendiente configuración de cabeceras y diagnóstico de Cloudflare con acceso al servicio. No se han aplicado cambios al servidor. Despliegue del tema requiere validar compatibilidad y acceso a Ghost.
+
 ## Checkpoint TikTok posts públicos (2026-10-14 ~11:20 Chicago · Cursor)
 - Raul: los posts no deben salir privados. Hecho en la cuenta y en Studio:
   - Cuenta **https://www.tiktok.com/@tuhoynoticias** ya no es privada (Private account off).
