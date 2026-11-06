@@ -29,7 +29,7 @@
     }
 
     function closeMenu() {
-        if (!drawer || !toggle) return;
+        if (!drawer || !toggle || drawer.hidden) return;
         drawer.hidden = true;
         toggle.setAttribute("aria-expanded", "false");
         document.body.style.overflow = "";
@@ -116,13 +116,28 @@
     var copyLink = document.querySelector("[data-copy-link]");
     var shareStatus = document.querySelector("[data-share-status]");
 
+    var shareStatusTimer;
+
     function setShareStatus(message) {
         if (!shareStatus) return;
         shareStatus.textContent = message;
         window.dispatchEvent(new CustomEvent("tuhoy:share-status", {detail: shareStatus}));
-        window.setTimeout(function () {
+        window.clearTimeout(shareStatusTimer);
+        shareStatusTimer = window.setTimeout(function () {
             shareStatus.textContent = "";
         }, 2200);
+    }
+
+    function copyShareLink(url) {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) {
+            setShareStatus("Copia el enlace desde la barra de direcciones.");
+            return;
+        }
+        navigator.clipboard.writeText(url).then(function () {
+            setShareStatus("Enlace copiado");
+        }).catch(function () {
+            setShareStatus("No se pudo copiar. Copia el enlace desde la barra de direcciones.");
+        });
     }
 
     if (nativeShare) {
@@ -132,21 +147,20 @@
                 url: window.location.href
             };
             if (navigator.share) {
-                navigator.share(data).catch(function () {});
-            } else if (navigator.clipboard) {
-                navigator.clipboard.writeText(data.url).then(function () {
-                    setShareStatus("Enlace copiado");
+                navigator.share(data).catch(function (error) {
+                    if (!error || error.name !== "AbortError") {
+                        setShareStatus("No se pudo compartir. Prueba con Copiar enlace.");
+                    }
                 });
+            } else {
+                copyShareLink(data.url);
             }
         });
     }
 
     if (copyLink) {
         copyLink.addEventListener("click", function () {
-            if (!navigator.clipboard) return;
-            navigator.clipboard.writeText(window.location.href).then(function () {
-                setShareStatus("Enlace copiado");
-            });
+            copyShareLink(window.location.href);
         });
     }
 
